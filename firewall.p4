@@ -67,8 +67,8 @@ header icmp_t {
 }
 
 struct metadata {
-    bit<32>    synopencounter1;
-    bit<32>    synopencounter2;
+    bit<32>    syncounter1;
+    bit<32>    syncounter2;
     //bit<32>    byecounter;
     // bit<32>    byecounter2;
     bit<10>    hashindex1;
@@ -76,7 +76,8 @@ struct metadata {
     bit<32>    portNumber;
     bit<32>    routerPort;
     bit<32>    portLimit;
-    bit<4>     sipType;
+    bit<1>     isSYN;
+    bit<1>     isACK;
     bit<32>    localNetwork;
     bit<1>     localNetworkOriginated;
 }
@@ -157,10 +158,10 @@ control MyIngress(inout headers hdr, inout metadata meta, inout standard_metadat
     //     log_msg("count_sipBye: meta.routerPort = {}", {meta.routerPort});
 
     //     // Not a known attacker. Count the invite
-    //     meta.synopencounter1 = meta.synopencounter1 + 1;
-    //     meta.synopencounter2 = meta.synopencounter2 + 1;
-    //     syn_register.write((bit<32>)meta.hashindex1, meta.synopencounter1);
-    //     syn_register.write((bit<32>)meta.hashindex2, meta.synopencounter2);
+    //     meta.syncounter1 = meta.syncounter1 + 1;
+    //     meta.syncounter2 = meta.syncounter2 + 1;
+    //     syn_register.write((bit<32>)meta.hashindex1, meta.syncounter1);
+    //     syn_register.write((bit<32>)meta.hashindex2, meta.syncounter2);
 
     // }
 
@@ -417,12 +418,12 @@ control MyIngress(inout headers hdr, inout metadata meta, inout standard_metadat
                     );
 
                     // Is this a known attacker?
-                    syn_register.read(meta.synopencounter1, (bit<32>)meta.hashindex1);
-                    syn_register.read(meta.synopencounter2, (bit<32>)meta.hashindex2);
-                    log_msg("INGRESS.Apply meta.synopencounter1 = {}", {meta.synopencounter1});
-                    log_msg("INGRESS.Apply meta.synopencounter2 = {}", {meta.synopencounter2});
+                    syn_register.read(meta.syncounter1, (bit<32>)meta.hashindex1);
+                    syn_register.read(meta.syncounter2, (bit<32>)meta.hashindex2);
+                    log_msg("INGRESS.Apply meta.syncounter1 = {}", {meta.syncounter1});
+                    log_msg("INGRESS.Apply meta.syncounter2 = {}", {meta.syncounter2});
                     log_msg("INGRESS.Apply meta.portLimit = {}", {meta.portLimit});
-                    if ((meta.synopencounter1 > meta.portLimit) && (meta.synopencounter2 > meta.portLimit)){
+                    if ((meta.syncounter1 > meta.portLimit) && (meta.syncounter2 > meta.portLimit)){
                         log_msg("The attacker is: {}", {hdr.ipv4.srcAddr});
                         log_msg("The targeted DoS IP: {}", {hdr.ipv4.dstAddr});
                         log_msg("The targeted DoS UDP: {}", {hdr.tcp.dstPort});
