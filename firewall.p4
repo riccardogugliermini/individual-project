@@ -182,6 +182,7 @@ control MyIngress(inout headers hdr, inout metadata meta, inout standard_metadat
         }
 
         actions = {
+            NoAction;
             drop;
         }
         default_action = NoAction();
@@ -212,7 +213,7 @@ control MyIngress(inout headers hdr, inout metadata meta, inout standard_metadat
 
             if (hdr.tcp.isValid()) {
 
-                if (hdr.tcp.flags[4]) {
+                if (hdr.tcp.flags.get_bit(4)) {
                     log_msg("TCP request = SYN");
 
                     // Generate meta.hashindex1 for bloom filter index
@@ -285,9 +286,8 @@ control MyDeparser(packet_out packet, in headers hdr) {
     apply {
         packet.emit(hdr.ethernet);
         packet.emit(hdr.ipv4);
-        packet.emit(hdr.udp);
+        packet.emit(hdr.icmp);
         packet.emit(hdr.tcp);
-        packet.emit(hdr.sip);
     }
 }
 
