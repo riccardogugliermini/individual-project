@@ -17,6 +17,7 @@ typedef bit<9>  egressSpec_t;
 typedef bit<9>  ingressSpec_t;
 typedef bit<48> macAddr_t;
 typedef bit<32> ip4Addr_t;
+typedef bit<6>  tcp_headers_t;  
 
 // Ethernet Header
 header ethernet_t {
@@ -136,9 +137,9 @@ control MyVerifyChecksum(inout headers hdr, inout metadata meta) {
 control MyIngress(inout headers hdr, inout metadata meta, inout standard_metadata_t standard_metadata) {
 
     // ACTIONS
-    // action drop() {
-    //     mark_to_drop(standard_metadata);
-    // }
+    action drop() {
+        mark_to_drop(standard_metadata);
+    }
 
     //  action ipv4_forward(macAddr_t dstAddr, egressSpec_t port) {
     //     standard_metadata.egress_spec = port;
@@ -259,6 +260,11 @@ control MyIngress(inout headers hdr, inout metadata meta, inout standard_metadat
         syn_register.write((bit<32>)meta.hashindex2, 0);
     }
 
+    action categorize_action(tcp_headers_t tcpHeaders){
+        meta.isSYN = hdr.tcp.flags >> 4;
+        meta.isACK = hdr.tcp.flags >> 1
+    }
+
 
     // action S2C_action(){
     //     const bit<48> INVITEstartline = 0x494e56495445;
@@ -317,7 +323,7 @@ control MyIngress(inout headers hdr, inout metadata meta, inout standard_metadat
     }
 
  
-    table INVITE_count_table {
+    table SYN_count_table {
         key = {
             standard_metadata.ingress_port: exact;
             //meta.portLimit: exact;
