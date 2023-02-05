@@ -213,7 +213,7 @@ control MyIngress(inout headers hdr, inout metadata meta, inout standard_metadat
 
             if (hdr.tcp.isValid()) {
 
-                if (hdr.tcp.flags.get_bit(4)) {
+                if (hdr.tcp.flags & (1 << 4)) {
                     log_msg("TCP request = SYN");
 
                     // Generate meta.hashindex1 for bloom filter index
