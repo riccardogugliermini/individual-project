@@ -262,8 +262,8 @@ control MyIngress(inout headers hdr, inout metadata meta, inout standard_metadat
     }
 
     action categorize_action(tcp_headers_t tcpHeaders){
-        meta.isSYN = hdr.tcp.flags >> 4 & 1;
-        meta.isACK = hdr.tcp.flags >> 1 & 1;
+        meta.isSYN = (hdr.tcp.flags >> 4) & 1;
+        meta.isACK = (hdr.tcp.flags >> 1) & 1;
     }
 
 
