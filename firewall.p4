@@ -66,6 +66,18 @@ header icmp_t {
 }
 
 struct metadata {
+    bit<32>    synopencounter1;
+    bit<32>    synopencounter2;
+    //bit<32>    byecounter;
+    // bit<32>    byecounter2;
+    bit<10>    hashindex1;
+    bit<10>    hashindex2;
+    bit<32>    portNumber;
+    bit<32>    routerPort;
+    bit<32>    portLimit;
+    bit<4>     sipType;
+    bit<32>    localNetwork;
+    bit<1>     localNetworkOriginated;
 }
 
 struct headers {
