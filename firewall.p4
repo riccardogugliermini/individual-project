@@ -427,6 +427,12 @@ control MyIngress(inout headers hdr, inout metadata meta, inout standard_metadat
 
             if (hdr.tcp.isValid()) {
 
+                // ACK
+                if (((hdr.tcp.flags >> 1) & 1) != 0) {
+                    SYN_decrease_table.apply();
+                    log_msg("TCP ACK");
+                }
+
                 //SYN request
                 if (((hdr.tcp.flags >> 4) & 1) != 0) {
                     log_msg("TCP request = SYN");
@@ -465,11 +471,6 @@ control MyIngress(inout headers hdr, inout metadata meta, inout standard_metadat
                     }
 
                     SYN_count_table.apply();
-                }
-
-                if (((hdr.tcp.flags >> 1) & 1) != 0) {
-                    SYN_decrease_table.apply();
-                    log_msg("TCP ACK");
                 }
             }
         }
