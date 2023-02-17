@@ -1,4 +1,4 @@
-/* 
+/*
 * Riccardo Gugliermini (riccardo.gugliermini@kcl.ac.uk)
 * 20059776
 */
@@ -17,7 +17,7 @@ typedef bit<9>  egressSpec_t;
 typedef bit<9>  ingressSpec_t;
 typedef bit<48> macAddr_t;
 typedef bit<32> ip4Addr_t;
-typedef bit<6>  tcp_headers_t;  
+typedef bit<6>  tcp_headers_t;
 
 // Ethernet Header
 header ethernet_t {
@@ -129,7 +129,7 @@ parser MyParser(packet_in packet, out headers hdr, inout metadata meta, inout st
 }
 
 // ---- CHECKSUM VERIFICATION ----
-control MyVerifyChecksum(inout headers hdr, inout metadata meta) {   
+control MyVerifyChecksum(inout headers hdr, inout metadata meta) {
     apply {  }
 }
 
@@ -197,9 +197,9 @@ control MyIngress(inout headers hdr, inout metadata meta, inout standard_metadat
     //     log_msg("count_sipBye: CLIENT->SERVER");
 
     //     // Generate meta.hashindex1 for bloom filter index
-    //     hash(  meta.hashindex1, 
-    //             HashAlgorithm.crc32, 
-    //             10w0, 
+    //     hash(  meta.hashindex1,
+    //             HashAlgorithm.crc32,
+    //             10w0,
     //             {hdr.ipv4.dstAddr, hdr.udp.dstPort, standard_metadata.ingress_port, INVITEstartline},
     //             10w1023
     //     );
@@ -211,7 +211,7 @@ control MyIngress(inout headers hdr, inout metadata meta, inout standard_metadat
     //             10w1023
     //     );
 
-    //     // Reset invite_register at hashindex1 and hashindex2 location to 0 
+    //     // Reset invite_register at hashindex1 and hashindex2 location to 0
     //     // to indicate completion of INVITE-BYE pair
     //     invite_register.write((bit<32>)meta.hashindex1, 0);
     //     invite_register.write((bit<32>)meta.hashindex2, 0);
@@ -221,16 +221,16 @@ control MyIngress(inout headers hdr, inout metadata meta, inout standard_metadat
         const bit<48> SYNstartline = 0x53594e;
         log_msg("count_tcpAck: CLIENT->SERVER");
 
-        hash(  meta.hashindex1, 
-                HashAlgorithm.crc32, 
-                10w0, 
+        hash(  meta.hashindex1,
+                HashAlgorithm.crc32,
+                10w0,
                 {hdr.ipv4.dstAddr, hdr.tcp.dstPort, standard_metadata.ingress_port, SYNstartline},
                 10w1023
         );
 
-        hash(  meta.hashindex2, 
-                HashAlgorithm.crc16, 
-                10w0, 
+        hash(  meta.hashindex2,
+                HashAlgorithm.crc16,
+                10w0,
                 {hdr.ipv4.dstAddr, hdr.tcp.dstPort, standard_metadata.ingress_port, SYNstartline},
                 10w1023
         );
@@ -243,16 +243,16 @@ control MyIngress(inout headers hdr, inout metadata meta, inout standard_metadat
         const bit<48> SYNstartline = 0x53594e;
         log_msg("count_tcpAck: SERVER->CLIENT");
 
-        hash(  meta.hashindex1, 
-                HashAlgorithm.crc32, 
-                10w0, 
+        hash(  meta.hashindex1,
+                HashAlgorithm.crc32,
+                10w0,
                 {hdr.ipv4.srcAddr, hdr.tcp.srcPort, standard_metadata.egress_spec, SYNstartline},
                 10w1023
         );
 
-        hash(  meta.hashindex2, 
-                HashAlgorithm.crc16, 
-                10w0, 
+        hash(  meta.hashindex2,
+                HashAlgorithm.crc16,
+                10w0,
                 {hdr.ipv4.srcAddr, hdr.tcp.srcPort, standard_metadata.egress_spec, SYNstartline},
                 10w1023
         );
@@ -262,8 +262,8 @@ control MyIngress(inout headers hdr, inout metadata meta, inout standard_metadat
     }
 
     action categorize_action(tcp_headers_t tcpHeaders){
-        meta.isSYN = (hdr.tcp.flags & 000010) != 0;
-        meta.isACK = (hdr.tcp.flags & 010000) != 0;
+        meta.isSYN = (bit<1>)((hdr.tcp.flags & 000010) != 0);
+        meta.isACK = (bit<1>)((hdr.tcp.flags & 010000) != 0);
     }
 
 
@@ -277,9 +277,9 @@ control MyIngress(inout headers hdr, inout metadata meta, inout standard_metadat
 
     //     // Generate meta.hashindex1 for bloom filter index, but with different HASH input to match
     //     // the original INVITE so that it produce the same index value
-    //     hash(  meta.hashindex1, 
-    //             HashAlgorithm.crc32, 
-    //             10w0, 
+    //     hash(  meta.hashindex1,
+    //             HashAlgorithm.crc32,
+    //             10w0,
     //             {hdr.ipv4.srcAddr, hdr.udp.srcPort, standard_metadata.egress_spec, INVITEstartline},
     //             10w1023
     //     );
@@ -292,7 +292,7 @@ control MyIngress(inout headers hdr, inout metadata meta, inout standard_metadat
     //             10w1023
     //     );
 
-    //     // Reset invite_register at hashindex1 and hashindex2 location to 0 
+    //     // Reset invite_register at hashindex1 and hashindex2 location to 0
     //     // to indicate completion of INVITE-BYE pair
     //     invite_register.write((bit<32>)meta.hashindex1, 0);
     //     invite_register.write((bit<32>)meta.hashindex2, 0);
@@ -323,7 +323,7 @@ control MyIngress(inout headers hdr, inout metadata meta, inout standard_metadat
         default_action = NoAction();
     }
 
- 
+
     table SYN_count_table {
         key = {
             standard_metadata.ingress_port: exact;
@@ -336,7 +336,7 @@ control MyIngress(inout headers hdr, inout metadata meta, inout standard_metadat
             NoAction;
         }
         size = 1024;
-        const default_action = NoAction();
+        const default_action = count_tcpSyn();
     }
 
     table BYE_fromClient_toServer_table {
@@ -345,9 +345,9 @@ control MyIngress(inout headers hdr, inout metadata meta, inout standard_metadat
             //meta.portLimit: exact;
             hdr.tcp.flags: exact;
         }
-        actions = { 
-            NoAction; 
-            C2S_action; 
+        actions = {
+            NoAction;
+            C2S_action;
         }
         const default_action = NoAction();
     }
@@ -358,9 +358,9 @@ control MyIngress(inout headers hdr, inout metadata meta, inout standard_metadat
             //meta.portLimit: exact;
             hdr.tcp.flags: exact;
         }
-        actions = { 
-            NoAction; 
-            S2C_action; 
+        actions = {
+            NoAction;
+            S2C_action;
         }
         const default_action = NoAction();
     }
@@ -403,34 +403,37 @@ control MyIngress(inout headers hdr, inout metadata meta, inout standard_metadat
                     log_msg("TCP request = SYN");
 
                     // Generate meta.hashindex1 for bloom filter index
-                    hash(  meta.hashindex1, 
-                            HashAlgorithm.crc32, 
-                            10w0, 
-                            {hdr.ipv4.srcAddr, hdr.ipv4.dstAddr, hdr.tcp.dstPort},
+                    hash(  meta.hashindex1,
+                            HashAlgorithm.crc32,
+                            10w0,
+                            {hdr.ipv4.srcAddr, hdr.ipv4.dstAddr},
                             10w1023
                     );
                     // Generate meta.hashindex2 for bloom filter index
                     hash(  meta.hashindex2,
                             HashAlgorithm.crc16,
                             10w0,
-                            {hdr.ipv4.srcAddr, hdr.ipv4.dstAddr, hdr.tcp.dstPort},
+                            {hdr.ipv4.srcAddr, hdr.ipv4.dstAddr},
                             10w1023
                     );
 
                     // Is this a known attacker?
                     syn_register.read(meta.syncounter1, (bit<32>)meta.hashindex1);
                     syn_register.read(meta.syncounter2, (bit<32>)meta.hashindex2);
+                    log_msg("INGRESS.hdr.ipv4.srcAddr{}", {hdr.ipv4.srcAddr});
+                    log_msg("INGRESS.hdr.ipv4.dstAddr = {}", {hdr.ipv4.dstAddr});
+                    log_msg("INGRESS.hdr.tcp.dstPort = {}", {hdr.tcp.dstPort});
                     log_msg("INGRESS.Apply meta.syncounter1 = {}", {meta.syncounter1});
                     log_msg("INGRESS.Apply meta.syncounter2 = {}", {meta.syncounter2});
                     log_msg("INGRESS.Apply meta.portLimit = {}", {meta.portLimit});
-                    if ((meta.syncounter1 > meta.portLimit) && (meta.syncounter2 > meta.portLimit)){
+                    if ((meta.syncounter1 > 1) && (meta.syncounter2 > 1)){
                         log_msg("The attacker is: {}", {hdr.ipv4.srcAddr});
                         log_msg("The targeted DoS IP: {}", {hdr.ipv4.dstAddr});
                         log_msg("The targeted DoS UDP: {}", {hdr.tcp.dstPort});
                         victimIp_register.write((bit<32>)meta.hashindex1, hdr.ipv4.dstAddr);
                         victimPort_register.write((bit<32>)meta.hashindex1, (bit<32>)hdr.tcp.dstPort);
                         drop();
-                    } 
+                    }
 
                     SYN_count_table.apply();
                 }
