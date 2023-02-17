@@ -202,7 +202,6 @@ control MyIngress(inout headers hdr, inout metadata meta, inout standard_metadat
         if (meta.syncounter1 > 0 && meta.syncounter2 > 0) {
             meta.syncounter1 = meta.syncounter1 - 1;
             meta.syncounter2 = meta.syncounter2 - 1;
-            
         }
 
         syn_register.write((bit<32>)meta.hashindex1, meta.syncounter1);
@@ -439,6 +438,21 @@ control MyIngress(inout headers hdr, inout metadata meta, inout standard_metadat
 
             if (hdr.tcp.isValid()) {
 
+                // Generate meta.hashindex1 for bloom filter index
+                hash(  meta.hashindex1,
+                        HashAlgorithm.crc32,
+                        10w0,
+                        {hdr.ipv4.srcAddr, hdr.ipv4.dstAddr},
+                        10w1023
+                );
+                // Generate meta.hashindex2 for bloom filter index
+                hash(  meta.hashindex2,
+                        HashAlgorithm.crc16,
+                        10w0,
+                        {hdr.ipv4.srcAddr, hdr.ipv4.dstAddr},
+                        10w1023
+                );
+
                 // ACK
                 //if (((hdr.tcp.flags >> 1) & 1) != 0) {
                 if (hdr.tcp.ack == 1) {
@@ -451,20 +465,6 @@ control MyIngress(inout headers hdr, inout metadata meta, inout standard_metadat
                 if (hdr.tcp.syn == 1) {
                     log_msg("TCP request = SYN");
 
-                    // Generate meta.hashindex1 for bloom filter index
-                    hash(  meta.hashindex1,
-                            HashAlgorithm.crc32,
-                            10w0,
-                            {hdr.ipv4.srcAddr, hdr.ipv4.dstAddr},
-                            10w1023
-                    );
-                    // Generate meta.hashindex2 for bloom filter index
-                    hash(  meta.hashindex2,
-                            HashAlgorithm.crc16,
-                            10w0,
-                            {hdr.ipv4.srcAddr, hdr.ipv4.dstAddr},
-                            10w1023
-                    );
 
                     // Is this a known attacker?
                     syn_register.read(meta.syncounter1, (bit<32>)meta.hashindex1);
