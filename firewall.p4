@@ -359,7 +359,7 @@ control MyIngress(inout headers hdr, inout metadata meta, inout standard_metadat
             hdr.tcp.flags: exact;
         }
         actions = {
-            count_tcpSyn;
+            decrease_tcpSyn;
             drop;
             NoAction;
         }
