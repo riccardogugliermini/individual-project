@@ -188,6 +188,18 @@ control MyIngress(inout headers hdr, inout metadata meta, inout standard_metadat
         syn_register.write((bit<32>)meta.hashindex2, meta.syncounter2);
     }
 
+    action decrease_tcpSyn() {
+        log_msg("count_tcpSyn: standard_metadata.ingress_port = {}", {standard_metadata.ingress_port});
+        log_msg("count_tcpSyn: standard_metadata.egress_port = {}", {standard_metadata.ingress_port});
+        log_msg("count_tcpSyn: standard_metadata.egress_spec = {}", {standard_metadata.egress_spec});
+        log_msg("count_tcpSyn: meta.routerPort = {}", {meta.routerPort});
+
+        meta.syncounter1 = meta.syncounter1 - 1;
+        meta.syncounter2 = meta.syncounter2 - 1;
+        syn_register.write((bit<32>)meta.hashindex1, meta.syncounter1);
+        syn_register.write((bit<32>)meta.hashindex2, meta.syncounter2);
+    }
+
     // action C2S_action(){
     //     const bit<48> INVITEstartline = 0x494e56495445;
     //     //meta.routerPort = 4;
@@ -339,6 +351,22 @@ control MyIngress(inout headers hdr, inout metadata meta, inout standard_metadat
         const default_action = count_tcpSyn();
     }
 
+
+    table SYN_decrease_table {
+        key = {
+            standard_metadata.ingress_port: exact;
+            //meta.portLimit: exact;
+            hdr.tcp.flags: exact;
+        }
+        actions = {
+            count_tcpSyn;
+            drop;
+            NoAction;
+        }
+        size = 1024;
+        const default_action = decrease_tcpSyn();
+    }
+
     table BYE_fromClient_toServer_table {
         key = {
             standard_metadata.ingress_port: exact;
@@ -389,6 +417,7 @@ control MyIngress(inout headers hdr, inout metadata meta, inout standard_metadat
     }
 
     apply {
+        meta.portLimit = 3;
 
          if (hdr.ipv4.isValid()) {
 
@@ -426,7 +455,7 @@ control MyIngress(inout headers hdr, inout metadata meta, inout standard_metadat
                     log_msg("INGRESS.Apply meta.syncounter1 = {}", {meta.syncounter1});
                     log_msg("INGRESS.Apply meta.syncounter2 = {}", {meta.syncounter2});
                     log_msg("INGRESS.Apply meta.portLimit = {}", {meta.portLimit});
-                    if ((meta.syncounter1 > 1) && (meta.syncounter2 > 1)){
+                    if ((meta.syncounter1 > meta.portLimit) && (meta.syncounter2 > meta.portLimit)){
                         log_msg("The attacker is: {}", {hdr.ipv4.srcAddr});
                         log_msg("The targeted DoS IP: {}", {hdr.ipv4.dstAddr});
                         log_msg("The targeted DoS UDP: {}", {hdr.tcp.dstPort});
@@ -439,6 +468,7 @@ control MyIngress(inout headers hdr, inout metadata meta, inout standard_metadat
                 }
 
                 if (((hdr.tcp.flags >> 1) & 1) != 0) {
+                    SYN_decrease_table.apply();
                     log_msg("TCP ACK");
                 }
             }
