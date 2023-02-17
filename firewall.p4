@@ -199,10 +199,13 @@ control MyIngress(inout headers hdr, inout metadata meta, inout standard_metadat
         log_msg("count_tcpSyn: standard_metadata.egress_spec = {}", {standard_metadata.egress_spec});
         log_msg("count_tcpSyn: meta.routerPort = {}", {meta.routerPort});
 
-        meta.syncounter1 = meta.syncounter1 - 1;
-        meta.syncounter2 = meta.syncounter2 - 1;
-        syn_register.write((bit<32>)meta.hashindex1, meta.syncounter1);
-        syn_register.write((bit<32>)meta.hashindex2, meta.syncounter2);
+        if (meta.syncounter1 > 0 && meta.syncounter2 > 0) {
+            meta.syncounter1 = meta.syncounter1 - 1;
+            syn_register.write((bit<32>)meta.hashindex1, meta.syncounter1);
+            meta.syncounter2 = meta.syncounter2 - 1;
+            syn_register.write((bit<32>)meta.hashindex2, meta.syncounter2);
+        }
+        
     }
 
     // action C2S_action(){
