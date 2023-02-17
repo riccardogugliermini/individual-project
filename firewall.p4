@@ -347,7 +347,7 @@ control MyIngress(inout headers hdr, inout metadata meta, inout standard_metadat
         key = {
             standard_metadata.ingress_port: exact;
             //meta.portLimit: exact;
-            hdr.tcp.flags: exact;
+            //hdr.tcp.flags: exact;
         }
         actions = {
             count_tcpSyn;
@@ -363,7 +363,7 @@ control MyIngress(inout headers hdr, inout metadata meta, inout standard_metadat
         key = {
             standard_metadata.ingress_port: exact;
             //meta.portLimit: exact;
-            hdr.tcp.flags: exact;
+            //hdr.tcp.flags: exact;
         }
         actions = {
             decrease_tcpSyn;
@@ -378,7 +378,7 @@ control MyIngress(inout headers hdr, inout metadata meta, inout standard_metadat
         key = {
             standard_metadata.ingress_port: exact;
             //meta.portLimit: exact;
-            hdr.tcp.flags: exact;
+            //hdr.tcp.flags: exact;
         }
         actions = {
             NoAction;
@@ -391,7 +391,7 @@ control MyIngress(inout headers hdr, inout metadata meta, inout standard_metadat
         key = {
             standard_metadata.ingress_port: exact;
             //meta.portLimit: exact;
-            hdr.tcp.flags: exact;
+            //hdr.tcp.flags: exact;
         }
         actions = {
             NoAction;
@@ -402,7 +402,8 @@ control MyIngress(inout headers hdr, inout metadata meta, inout standard_metadat
 
     table categorizeTcp_table{
         key ={
-            hdr.tcp.flags: exact;
+            hdr.tcp.syn: exact;
+            hdr.tcp.ack: exact;
         }
         actions = {
             categorize_action;
