@@ -50,7 +50,12 @@ header tcp_t {
     bit<32>   ackNo;
     bit<4>    dataOffset;
     bit<6>    res;
-    bit<6>    flags;
+    bit<1>    urg;
+    bit<1>    ack;
+    bit<1>    psh;
+    bit<1>    rst;
+    bit<1>    syn;
+    bit<1>    fin;
     bit<16>   window;
     bit<16>   checksum;
     bit<16>   urgentPtr;
@@ -274,8 +279,10 @@ control MyIngress(inout headers hdr, inout metadata meta, inout standard_metadat
     }
 
     action categorize_action(tcp_headers_t tcpHeaders){
-        meta.isSYN = (bit<1>)((hdr.tcp.flags & 000010) != 0);
-        meta.isACK = (bit<1>)((hdr.tcp.flags & 010000) != 0);
+        meta.isSYN = hdr.tcp.syn;
+        meta.isACK = hdr.tcp.fin;
+        //meta.isSYN = (bit<1>)((hdr.tcp.flags & 000010) != 0);
+        //meta.isACK = (bit<1>)((hdr.tcp.flags & 010000) != 0);
     }
 
 
@@ -428,13 +435,15 @@ control MyIngress(inout headers hdr, inout metadata meta, inout standard_metadat
             if (hdr.tcp.isValid()) {
 
                 // ACK
-                if (((hdr.tcp.flags >> 1) & 1) != 0) {
+                //if (((hdr.tcp.flags >> 1) & 1) != 0) {
+                if (hdr.tcp.ack) {
                     SYN_decrease_table.apply();
                     log_msg("TCP ACK");
                 }
 
                 //SYN request
-                if (((hdr.tcp.flags >> 4) & 1) != 0) {
+                //if (((hdr.tcp.flags >> 4) & 1) != 0) {
+                if (hdr.tcp.syn) {
                     log_msg("TCP request = SYN");
 
                     // Generate meta.hashindex1 for bloom filter index
