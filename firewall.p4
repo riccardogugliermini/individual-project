@@ -436,14 +436,14 @@ control MyIngress(inout headers hdr, inout metadata meta, inout standard_metadat
 
                 // ACK
                 //if (((hdr.tcp.flags >> 1) & 1) != 0) {
-                if (hdr.tcp.ack) {
+                if (hdr.tcp.ack == 1) {
                     SYN_decrease_table.apply();
                     log_msg("TCP ACK");
                 }
 
                 //SYN request
                 //if (((hdr.tcp.flags >> 4) & 1) != 0) {
-                if (hdr.tcp.syn) {
+                if (hdr.tcp.syn == 1) {
                     log_msg("TCP request = SYN");
 
                     // Generate meta.hashindex1 for bloom filter index
