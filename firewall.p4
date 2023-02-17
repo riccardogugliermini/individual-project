@@ -201,11 +201,12 @@ control MyIngress(inout headers hdr, inout metadata meta, inout standard_metadat
 
         if (meta.syncounter1 > 0 && meta.syncounter2 > 0) {
             meta.syncounter1 = meta.syncounter1 - 1;
-            syn_register.write((bit<32>)meta.hashindex1, meta.syncounter1);
             meta.syncounter2 = meta.syncounter2 - 1;
-            syn_register.write((bit<32>)meta.hashindex2, meta.syncounter2);
+            
         }
-        
+
+        syn_register.write((bit<32>)meta.hashindex1, meta.syncounter1);
+        syn_register.write((bit<32>)meta.hashindex2, meta.syncounter2);
     }
 
     // action C2S_action(){
