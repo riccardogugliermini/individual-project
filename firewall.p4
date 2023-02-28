@@ -342,7 +342,7 @@ control MyIngress(inout headers hdr, inout metadata meta, inout standard_metadat
                         10w1023
                 );
 
-            blacklist_register.read(meta.balcklistIP, meta.srcIpHash);
+            blacklist_register.read((bit<32>)meta.balcklistIP, meta.srcIpHash);
             if (meta.balcklistIP == meta.srcAddr) {
                 drop();
             }
