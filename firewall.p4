@@ -228,7 +228,7 @@ control MyIngress(inout headers hdr, inout metadata meta, inout standard_metadat
         meta.droppedcounter1 = meta.droppedcounter1 + 1;
         meta.droppedcounter2 = meta.droppedcounter2 + 1;
         blacklistIndex.read(meta.blacklisindex, 0);
-        blacklist_register.write((bit<32>)meta.blacklistIndex, meta.srcAddr);
+        blacklist_register.write((bit<32>)meta.blacklisindex, meta.srcAddr);
         meta.blacklisindex = meta.blacklisindex + 1;
         blacklistIndex.write(0, meta.blacklisindex);
     }
@@ -338,7 +338,7 @@ control MyIngress(inout headers hdr, inout metadata meta, inout standard_metadat
         meta.portLimit = 3;
 
          if (hdr.ipv4.isValid()) {
-            meta.srcdAdr = hdr.ipv4;
+            meta.srcdAddr = hdr.ipv4;
 
             //KnownVictim_table.apply();
 
@@ -390,7 +390,7 @@ control MyIngress(inout headers hdr, inout metadata meta, inout standard_metadat
                         ingress_victimIp_register.write((bit<32>)meta.hashindex1, hdr.ipv4.dstAddr);
                         ingress_victimPort_register.write((bit<32>)meta.hashindex1, (bit<32>)hdr.tcp.dstPort);
                         drop();
-                        count_dropped.apply();
+                        dropped_count_table.apply();
                         ingress_dropped_register.read(meta.droppedcounter1, (bit<32>)meta.hashindex1);
                         ingress_dropped_register.read(meta.droppedcounter2, (bit<32>)meta.hashindex2);
                         if ((meta.droppedcounter1 > DROPPED_PACKETS_TRESHOLD) && (meta.droppedcounter2 > DROPPED_PACKETS_TRESHOLD)){
