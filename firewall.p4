@@ -95,9 +95,14 @@ struct headers {
 }
 
 register <bit<32>>(1024) blacklist_register;
-register <bit<32>>(1024) syn_register;
-register <bit<32>>(1024) victimIp_register;
-register <bit<32>>(1024) victimPort_register;
+
+register <bit<32>>(1024) ingress_syn_register;
+register <bit<32>>(1024) ingress_victimIp_register;
+register <bit<32>>(1024) ingress_victimPort_register;
+
+register <bit<32>>(1024) egress_syn_register;
+register <bit<32>>(1024) egress_victimIp_register;
+register <bit<32>>(1024) egress_victimPort_register;
 
 // ---- PARSER ----
 parser MyParser(packet_in packet, out headers hdr, inout metadata meta, inout standard_metadata_t standard_metadata) {
@@ -165,8 +170,8 @@ control MyIngress(inout headers hdr, inout metadata meta, inout standard_metadat
     //     // Not a known attacker. Count the invite
     //     meta.syncounter1 = meta.syncounter1 + 1;
     //     meta.syncounter2 = meta.syncounter2 + 1;
-    //     syn_register.write((bit<32>)meta.hashindex1, meta.syncounter1);
-    //     syn_register.write((bit<32>)meta.hashindex2, meta.syncounter2);
+    //     ingress_syn_register.write((bit<32>)meta.hashindex1, meta.syncounter1);
+    //     ingress_syn_register.write((bit<32>)meta.hashindex2, meta.syncounter2);
 
     // }
 
@@ -189,8 +194,8 @@ control MyIngress(inout headers hdr, inout metadata meta, inout standard_metadat
 
         meta.syncounter1 = meta.syncounter1 + 1;
         meta.syncounter2 = meta.syncounter2 + 1;
-        syn_register.write((bit<32>)meta.hashindex1, meta.syncounter1);
-        syn_register.write((bit<32>)meta.hashindex2, meta.syncounter2);
+        ingress_syn_register.write((bit<32>)meta.hashindex1, meta.syncounter1);
+        ingress_syn_register.write((bit<32>)meta.hashindex2, meta.syncounter2);
     }
 
     action decrease_tcpSyn() {
@@ -204,8 +209,8 @@ control MyIngress(inout headers hdr, inout metadata meta, inout standard_metadat
             meta.syncounter2 = meta.syncounter2 - 1;
         }
 
-        syn_register.write((bit<32>)meta.hashindex1, meta.syncounter1);
-        syn_register.write((bit<32>)meta.hashindex2, meta.syncounter2);
+        ingress_syn_register.write((bit<32>)meta.hashindex1, meta.syncounter1);
+        ingress_syn_register.write((bit<32>)meta.hashindex2, meta.syncounter2);
     }
 
     // action C2S_action(){
@@ -255,8 +260,8 @@ control MyIngress(inout headers hdr, inout metadata meta, inout standard_metadat
                 10w1023
         );
 
-        syn_register.write((bit<32>)meta.hashindex1, 0);
-        syn_register.write((bit<32>)meta.hashindex2, 0);
+        ingress_syn_register.write((bit<32>)meta.hashindex1, 0);
+        ingress_syn_register.write((bit<32>)meta.hashindex2, 0);
     }
 
     action S2C_action() {
@@ -277,8 +282,8 @@ control MyIngress(inout headers hdr, inout metadata meta, inout standard_metadat
                 10w1023
         );
 
-        syn_register.write((bit<32>)meta.hashindex1, 0);
-        syn_register.write((bit<32>)meta.hashindex2, 0);
+        ingress_syn_register.write((bit<32>)meta.hashindex1, 0);
+        ingress_syn_register.write((bit<32>)meta.hashindex2, 0);
     }
 
     action categorize_action(tcp_headers_t tcpHeaders){
@@ -467,8 +472,8 @@ control MyIngress(inout headers hdr, inout metadata meta, inout standard_metadat
 
 
                     // Is this a known attacker?
-                    syn_register.read(meta.syncounter1, (bit<32>)meta.hashindex1);
-                    syn_register.read(meta.syncounter2, (bit<32>)meta.hashindex2);
+                    ingress_syn_register.read(meta.syncounter1, (bit<32>)meta.hashindex1);
+                    ingress_syn_register.read(meta.syncounter2, (bit<32>)meta.hashindex2);
                     log_msg("INGRESS.hdr.ipv4.srcAddr{}", {hdr.ipv4.srcAddr});
                     log_msg("INGRESS.hdr.ipv4.dstAddr = {}", {hdr.ipv4.dstAddr});
                     log_msg("INGRESS.hdr.tcp.dstPort = {}", {hdr.tcp.dstPort});
@@ -479,8 +484,8 @@ control MyIngress(inout headers hdr, inout metadata meta, inout standard_metadat
                         log_msg("The attacker is: {}", {hdr.ipv4.srcAddr});
                         log_msg("The targeted DoS IP: {}", {hdr.ipv4.dstAddr});
                         log_msg("The targeted DoS UDP: {}", {hdr.tcp.dstPort});
-                        victimIp_register.write((bit<32>)meta.hashindex1, hdr.ipv4.dstAddr);
-                        victimPort_register.write((bit<32>)meta.hashindex1, (bit<32>)hdr.tcp.dstPort);
+                        ingress_victimIp_register.write((bit<32>)meta.hashindex1, hdr.ipv4.dstAddr);
+                        ingress_victimPort_register.write((bit<32>)meta.hashindex1, (bit<32>)hdr.tcp.dstPort);
                         drop();
                     }
 
@@ -495,9 +500,148 @@ control MyIngress(inout headers hdr, inout metadata meta, inout standard_metadat
 control MyEgress(inout headers hdr,
                  inout metadata meta,
                  inout standard_metadata_t standard_metadata) {
+    
+    action ipv4_forward(macAddr_t dstAddr, egressSpec_t port) {
+        standard_metadata.egress_spec = port;
+        hdr.ethernet.srcAddr = hdr.ethernet.dstAddr;
+        hdr.ethernet.dstAddr = dstAddr;
+        hdr.ipv4.ttl = hdr.ipv4.ttl - 1;
+    }
+    
+    action count_tcpSyn() {
+        log_msg("count_tcpSyn: standard_metadata.ingress_port = {}", {standard_metadata.ingress_port});
+        log_msg("count_tcpSyn: standard_metadata.egress_port = {}", {standard_metadata.ingress_port});
+        log_msg("count_tcpSyn: standard_metadata.egress_spec = {}", {standard_metadata.egress_spec});
+        log_msg("count_tcpSyn: meta.routerPort = {}", {meta.routerPort});
+
+        meta.syncounter1 = meta.syncounter1 + 1;
+        meta.syncounter2 = meta.syncounter2 + 1;
+        egress_syn_register.write((bit<32>)meta.hashindex1, meta.syncounter1);
+        egress_syn_register.write((bit<32>)meta.hashindex2, meta.syncounter2);
+    }
+
+    action decrease_tcpSyn() {
+        log_msg("count_tcpSyn: standard_metadata.ingress_port = {}", {standard_metadata.ingress_port});
+        log_msg("count_tcpSyn: standard_metadata.egress_port = {}", {standard_metadata.ingress_port});
+        log_msg("count_tcpSyn: standard_metadata.egress_spec = {}", {standard_metadata.egress_spec});
+        log_msg("count_tcpSyn: meta.routerPort = {}", {meta.routerPort});
+
+        if (meta.syncounter1 > 0 && meta.syncounter2 > 0) {
+            meta.syncounter1 = meta.syncounter1 - 1;
+            meta.syncounter2 = meta.syncounter2 - 1;
+        }
+
+        egress_syn_register.write((bit<32>)meta.hashindex1, meta.syncounter1);
+        egress_syn_register.write((bit<32>)meta.hashindex2, meta.syncounter2);
+    }
+
+    table ipv4_lpm {
+        key = {
+            hdr.ipv4.dstAddr: lpm;
+        }
+        actions = {
+            ipv4_forward;
+            drop;
+            NoAction;
+        }
+        size = 1024;
+        default_action = drop();
+    }
+
+    table SYN_count_table {
+        key = {
+            standard_metadata.ingress_port: exact;
+            //meta.portLimit: exact;
+            //hdr.tcp.flags: exact;
+        }
+        actions = {
+            count_tcpSyn;
+            drop;
+            NoAction;
+        }
+        size = 1024;
+        const default_action = count_tcpSyn();
+    }
 
 
-    apply {}
+    table SYN_decrease_table {
+        key = {
+            standard_metadata.ingress_port: exact;
+            //meta.portLimit: exact;
+            //hdr.tcp.flags: exact;
+        }
+        actions = {
+            decrease_tcpSyn;
+            drop;
+            NoAction;
+        }
+        size = 1024;
+        const default_action = decrease_tcpSyn();
+    }
+
+
+     apply {
+        meta.portLimit = 3;
+
+         if (hdr.ipv4.isValid()) {
+
+            //KnownVictim_table.apply();
+
+            ipv4_lpm.apply();
+
+            if (hdr.tcp.isValid()) {
+
+                // Generate meta.hashindex1 for bloom filter index
+                hash(  meta.hashindex1,
+                        HashAlgorithm.crc32,
+                        10w0,
+                        {hdr.ipv4.srcAddr, hdr.ipv4.dstAddr},
+                        10w1023
+                );
+                // Generate meta.hashindex2 for bloom filter index
+                hash(  meta.hashindex2,
+                        HashAlgorithm.crc16,
+                        10w0,
+                        {hdr.ipv4.srcAddr, hdr.ipv4.dstAddr},
+                        10w1023
+                );
+
+                // ACK
+                //if (((hdr.tcp.flags >> 1) & 1) != 0) {
+                if (hdr.tcp.ack == 1) {
+                    SYN_decrease_table.apply();
+                    log_msg("TCP ACK");
+                }
+
+                //SYN request
+                //if (((hdr.tcp.flags >> 4) & 1) != 0) {
+                if (hdr.tcp.syn == 1) {
+                    log_msg("TCP request = SYN");
+
+
+                    // Is this a known attacker?
+                    egress_syn_register.read(meta.syncounter1, (bit<32>)meta.hashindex1);
+                    egress_syn_register.read(meta.syncounter2, (bit<32>)meta.hashindex2);
+                    log_msg("INGRESS.hdr.ipv4.srcAddr{}", {hdr.ipv4.srcAddr});
+                    log_msg("INGRESS.hdr.ipv4.dstAddr = {}", {hdr.ipv4.dstAddr});
+                    log_msg("INGRESS.hdr.tcp.dstPort = {}", {hdr.tcp.dstPort});
+                    log_msg("INGRESS.Apply meta.syncounter1 = {}", {meta.syncounter1});
+                    log_msg("INGRESS.Apply meta.syncounter2 = {}", {meta.syncounter2});
+                    log_msg("INGRESS.Apply meta.portLimit = {}", {meta.portLimit});
+                    if ((meta.syncounter1 > meta.portLimit) && (meta.syncounter2 > meta.portLimit)){
+                        log_msg("The attacker is: {}", {hdr.ipv4.srcAddr});
+                        log_msg("The targeted DoS IP: {}", {hdr.ipv4.dstAddr});
+                        log_msg("The targeted DoS UDP: {}", {hdr.tcp.dstPort});
+                        egress_victimIp_register.write((bit<32>)meta.hashindex1, hdr.ipv4.dstAddr);
+                        egress_victimPort_register.write((bit<32>)meta.hashindex1, (bit<32>)hdr.tcp.dstPort);
+                        drop();
+                    }
+
+                    SYN_count_table.apply();
+                }
+            }
+        }
+    }
 }
 
 control MyComputeChecksum(inout headers  hdr, inout metadata meta) {
