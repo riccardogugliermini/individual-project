@@ -88,6 +88,7 @@ struct metadata {
     bit<1>     isACK;
     bit<32>    localNetwork;
     bit<1>     localNetworkOriginated;
+    bit<32>    srcAddr;
 }
 
 struct headers {
@@ -202,7 +203,7 @@ control MyIngress(inout headers hdr, inout metadata meta, inout standard_metadat
         log_msg("count_tcpSyn: meta.routerPort = {}", {meta.routerPort});
 
         meta.droppedcounter1 = meta.droppedcounter1 + 1;
-        meta.droppedcounter32 = meta.droppedcounter2 + 1;
+        meta.droppedcounter2 = meta.droppedcounter2 + 1;
         ingress_syn_register.write((bit<32>)meta.hashindex1, meta.droppedcounter1);
         ingress_syn_register.write((bit<32>)meta.hashindex2, meta.droppedcounter1);
     }
@@ -227,7 +228,7 @@ control MyIngress(inout headers hdr, inout metadata meta, inout standard_metadat
         meta.droppedcounter1 = meta.droppedcounter1 + 1;
         meta.droppedcounter2 = meta.droppedcounter2 + 1;
         blacklistIndex.read(meta.blacklisindex, 0);
-        blacklistIndex.write((bit<32>)blacklistIndex, standard_metadata.srcAddr);
+        blacklistIndex.write((bit<32>)blacklistIndex, meta.srcAddr);
         meta.blacklisindex = meta.blacklisindex + 1;
         blacklistIndex.write(0, meta.blacklisindex);
     }
@@ -337,6 +338,7 @@ control MyIngress(inout headers hdr, inout metadata meta, inout standard_metadat
         meta.portLimit = 3;
 
          if (hdr.ipv4.isValid()) {
+            meta.srcdAdr = hdr.ipv4;
 
             //KnownVictim_table.apply();
 
