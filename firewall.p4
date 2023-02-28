@@ -78,7 +78,7 @@ struct metadata {
     bit<32>    droppedcounter2;
     //bit<32>    byecounter;
     // bit<32>    byecounter2;
-    bit<10>    blacklisindex;
+    bit<32>    blacklisindex;
     bit<10>    hashindex1;
     bit<10>    hashindex2;
     bit<32>    portNumber;
@@ -225,7 +225,7 @@ control MyIngress(inout headers hdr, inout metadata meta, inout standard_metadat
         log_msg("count_tcpSyn: meta.routerPort = {}", {meta.routerPort});
 
         meta.droppedcounter1 = meta.droppedcounter1 + 1;
-        meta.droppedcounter32 = meta.droppedcounter2 + 1;
+        meta.droppedcounter2 = meta.droppedcounter2 + 1;
         blacklistIndex.read(meta.blacklisindex, 0);
         blacklistIndex.write((bit<32>)blacklistIndex, standard_metadata.srcAddr);
         meta.blacklisindex = meta.blacklisindex + 1;
