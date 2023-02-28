@@ -99,7 +99,7 @@ struct headers {
 }
 
 register <bit<32>>(1024) blacklist_register;
-register <bit<32>>(1, 0) blacklistIndex;
+register <bit<32>>(1, initializer = 0) blacklistIndex;
 
 register <bit<32>>(1024) ingress_syn_register;
 register <bit<32>>(1024) ingress_dropped_register;
@@ -338,7 +338,7 @@ control MyIngress(inout headers hdr, inout metadata meta, inout standard_metadat
         meta.portLimit = 3;
 
          if (hdr.ipv4.isValid()) {
-            meta.srcdAddr = hdr.ipv4;
+            meta.srcAddr = hdr.ipv4;
 
             //KnownVictim_table.apply();
 
