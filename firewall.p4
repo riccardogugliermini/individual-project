@@ -99,7 +99,7 @@ struct headers {
 }
 
 register <bit<32>>(1024) blacklist_register;
-register <bit<32>>(1, initializer = 0) blacklistIndex;
+register <bit<32>>(1) blacklistIndex;
 
 register <bit<32>>(1024) ingress_syn_register;
 register <bit<32>>(1024) ingress_dropped_register;
