@@ -245,7 +245,7 @@ control MyIngress(inout headers hdr, inout metadata meta, inout standard_metadat
         default_action = drop();
     }
 
-    table add_to_blacklist {
+    table blacklist_add {
         key = {
             hdr.ipv4.srcAddr: lpm;
         }
@@ -392,7 +392,7 @@ control MyIngress(inout headers hdr, inout metadata meta, inout standard_metadat
                         ingress_dropped_register.read(meta.droppedcounter1, (bit<32>)meta.hashindex1);
                         ingress_dropped_register.read(meta.droppedcounter2, (bit<32>)meta.hashindex2);
                         if ((meta.droppedcounter1 > DROPPED_PACKETS_TRESHOLD) && (meta.droppedcounter2 > DROPPED_PACKETS_TRESHOLD)){
-                            add_to_blacklist.apply();
+                            blacklist_add.apply();
                         }
                     }
 
