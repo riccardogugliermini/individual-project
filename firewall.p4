@@ -76,11 +76,9 @@ struct metadata {
     bit<32>    syncounter2;
     bit<32>    droppedcounter1;
     bit<32>    droppedcounter2;
-    //bit<32>    byecounter;
-    // bit<32>    byecounter2;
-    bit<32>    blacklisindex;
     bit<10>    hashindex1;
     bit<10>    hashindex2;
+    bit<10>    srcIpHash;
     bit<32>    portNumber;
     bit<32>    routerPort;
     bit<32>    portLimit;
@@ -89,6 +87,7 @@ struct metadata {
     bit<32>    localNetwork;
     bit<1>     localNetworkOriginated;
     bit<32>    srcAddr;
+    bit<32>    balcklistIP;
 }
 
 struct headers {
@@ -99,7 +98,6 @@ struct headers {
 }
 
 register <bit<32>>(1024) blacklist_register;
-register <bit<32>>(1) blacklistIndex;
 
 register <bit<32>>(1024) ingress_syn_register;
 register <bit<32>>(1024) ingress_dropped_register;
@@ -227,10 +225,7 @@ control MyIngress(inout headers hdr, inout metadata meta, inout standard_metadat
 
         meta.droppedcounter1 = meta.droppedcounter1 + 1;
         meta.droppedcounter2 = meta.droppedcounter2 + 1;
-        blacklistIndex.read(meta.blacklisindex, 0);
-        blacklist_register.write((bit<32>)meta.blacklisindex, meta.srcAddr);
-        meta.blacklisindex = meta.blacklisindex + 1;
-        blacklistIndex.write(0, meta.blacklisindex);
+        blacklist_register.write((bit<32>)meta.srcIpHash, meta.srcAddr);
     }
 
     table ipv4_lpm {
@@ -340,7 +335,17 @@ control MyIngress(inout headers hdr, inout metadata meta, inout standard_metadat
          if (hdr.ipv4.isValid()) {
             meta.srcAddr = hdr.ipv4.srcAddr;
 
-            //KnownVictim_table.apply();
+            hash(  meta.srcIpHash,
+                        HashAlgorithm.crc32,
+                        10w0,
+                        {hdr.ipv4.srcAddr},
+                        10w1023
+                );
+
+            blacklist_register.read(meta.blacklistIP, meta.srcIpHash);
+            if (meta.balcklistIP == meta.srcAddr) {
+                drop();
+            }
 
             ipv4_lpm.apply();
 
