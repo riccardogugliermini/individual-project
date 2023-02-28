@@ -382,43 +382,43 @@ control MyIngress(inout headers hdr, inout metadata meta, inout standard_metadat
         const default_action = decrease_tcpSyn();
     }
 
-    table BYE_fromClient_toServer_table {
-        key = {
-            standard_metadata.ingress_port: exact;
-            //meta.portLimit: exact;
-            //hdr.tcp.flags: exact;
-        }
-        actions = {
-            NoAction;
-            C2S_action;
-        }
-        const default_action = NoAction();
-    }
+    // table BYE_fromClient_toServer_table {
+    //     key = {
+    //         standard_metadata.ingress_port: exact;
+    //         //meta.portLimit: exact;
+    //         //hdr.tcp.flags: exact;
+    //     }
+    //     actions = {
+    //         NoAction;
+    //         C2S_action;
+    //     }
+    //     const default_action = NoAction();
+    // }
 
-    table BYE_fromServer_toClient_table {
-        key = {
-            standard_metadata.ingress_port: exact;
-            //meta.portLimit: exact;
-            //hdr.tcp.flags: exact;
-        }
-        actions = {
-            NoAction;
-            S2C_action;
-        }
-        const default_action = NoAction();
-    }
+    // table BYE_fromServer_toClient_table {
+    //     key = {
+    //         standard_metadata.ingress_port: exact;
+    //         //meta.portLimit: exact;
+    //         //hdr.tcp.flags: exact;
+    //     }
+    //     actions = {
+    //         NoAction;
+    //         S2C_action;
+    //     }
+    //     const default_action = NoAction();
+    // }
 
-    table categorizeTcp_table{
-        key ={
-            hdr.tcp.syn: exact;
-            hdr.tcp.ack: exact;
-        }
-        actions = {
-            categorize_action;
-            NoAction;
-        }
-        default_action = NoAction();
-    }
+    // table categorizeTcp_table{
+    //     key ={
+    //         hdr.tcp.syn: exact;
+    //         hdr.tcp.ack: exact;
+    //     }
+    //     actions = {
+    //         categorize_action;
+    //         NoAction;
+    //     }
+    //     default_action = NoAction();
+    // }
 
     table KnownVictim_table{
         key = {
@@ -539,7 +539,7 @@ control MyEgress(inout headers hdr,
         egress_syn_register.write((bit<32>)meta.hashindex2, meta.syncounter2);
     }
 
-    table ipv4_lpm {
+    table egress_ipv4_lpm {
         key = {
             hdr.ipv4.dstAddr: lpm;
         }
@@ -552,7 +552,7 @@ control MyEgress(inout headers hdr,
         default_action = drop();
     }
 
-    table SYN_count_table {
+    table egress_SYN_count_table {
         key = {
             standard_metadata.ingress_port: exact;
             //meta.portLimit: exact;
@@ -568,7 +568,7 @@ control MyEgress(inout headers hdr,
     }
 
 
-    table SYN_decrease_table {
+    table egress_SYN_decrease_table {
         key = {
             standard_metadata.ingress_port: exact;
             //meta.portLimit: exact;
