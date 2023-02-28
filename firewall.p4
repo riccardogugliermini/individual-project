@@ -338,7 +338,7 @@ control MyIngress(inout headers hdr, inout metadata meta, inout standard_metadat
         meta.portLimit = 3;
 
          if (hdr.ipv4.isValid()) {
-            meta.srcAddr = hdr.ipv4;
+            meta.srcAddr = hdr.ipv4.srcAddr;
 
             //KnownVictim_table.apply();
 
