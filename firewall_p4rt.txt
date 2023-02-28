@@ -1,0 +1,336 @@
+pkg_info {
+  arch: "v1model"
+}
+tables {
+  preamble {
+    id: 37375156
+    name: "MyIngress.ipv4_lpm"
+    alias: "ipv4_lpm"
+  }
+  match_fields {
+    id: 1
+    name: "hdr.ipv4.dstAddr"
+    bitwidth: 32
+    match_type: LPM
+  }
+  action_refs {
+    id: 28792405
+  }
+  action_refs {
+    id: 25652968
+  }
+  action_refs {
+    id: 21257015
+  }
+  size: 1024
+}
+tables {
+  preamble {
+    id: 47291279
+    name: "MyIngress.SYN_count_table"
+    alias: "SYN_count_table"
+  }
+  match_fields {
+    id: 1
+    name: "standard_metadata.ingress_port"
+    bitwidth: 9
+    match_type: EXACT
+  }
+  action_refs {
+    id: 22909842
+  }
+  action_refs {
+    id: 25652968
+  }
+  action_refs {
+    id: 21257015
+  }
+  const_default_action_id: 22909842
+  size: 1024
+}
+tables {
+  preamble {
+    id: 40939912
+    name: "MyIngress.SYN_decrease_table"
+    alias: "SYN_decrease_table"
+  }
+  match_fields {
+    id: 1
+    name: "standard_metadata.ingress_port"
+    bitwidth: 9
+    match_type: EXACT
+  }
+  action_refs {
+    id: 32100789
+  }
+  action_refs {
+    id: 25652968
+  }
+  action_refs {
+    id: 21257015
+  }
+  const_default_action_id: 32100789
+  size: 1024
+}
+tables {
+  preamble {
+    id: 43870133
+    name: "MyEgress.egress_ipv4_lpm"
+    alias: "egress_ipv4_lpm"
+  }
+  match_fields {
+    id: 1
+    name: "hdr.ipv4.dstAddr"
+    bitwidth: 32
+    match_type: LPM
+  }
+  action_refs {
+    id: 21524913
+  }
+  action_refs {
+    id: 20880156
+  }
+  action_refs {
+    id: 21257015
+  }
+  size: 1024
+}
+tables {
+  preamble {
+    id: 43007216
+    name: "MyEgress.egress_SYN_count_table"
+    alias: "egress_SYN_count_table"
+  }
+  match_fields {
+    id: 1
+    name: "standard_metadata.ingress_port"
+    bitwidth: 9
+    match_type: EXACT
+  }
+  action_refs {
+    id: 24301839
+  }
+  action_refs {
+    id: 20880156
+  }
+  action_refs {
+    id: 21257015
+  }
+  const_default_action_id: 24301839
+  size: 1024
+}
+tables {
+  preamble {
+    id: 44570417
+    name: "MyEgress.egress_SYN_decrease_table"
+    alias: "egress_SYN_decrease_table"
+  }
+  match_fields {
+    id: 1
+    name: "standard_metadata.ingress_port"
+    bitwidth: 9
+    match_type: EXACT
+  }
+  action_refs {
+    id: 19492977
+  }
+  action_refs {
+    id: 20880156
+  }
+  action_refs {
+    id: 21257015
+  }
+  const_default_action_id: 19492977
+  size: 1024
+}
+actions {
+  preamble {
+    id: 21257015
+    name: "NoAction"
+    alias: "NoAction"
+    annotations: "@noWarn(\"unused\")"
+  }
+}
+actions {
+  preamble {
+    id: 25652968
+    name: "MyIngress.drop"
+    alias: "MyIngress.drop"
+  }
+}
+actions {
+  preamble {
+    id: 28792405
+    name: "MyIngress.ipv4_forward"
+    alias: "ipv4_forward"
+  }
+  params {
+    id: 1
+    name: "dstAddr"
+    bitwidth: 48
+  }
+  params {
+    id: 2
+    name: "port"
+    bitwidth: 9
+  }
+}
+actions {
+  preamble {
+    id: 22909842
+    name: "MyIngress.count_tcpSyn"
+    alias: "count_tcpSyn"
+  }
+}
+actions {
+  preamble {
+    id: 32100789
+    name: "MyIngress.decrease_tcpSyn"
+    alias: "decrease_tcpSyn"
+  }
+}
+actions {
+  preamble {
+    id: 20880156
+    name: "MyEgress.drop"
+    alias: "MyEgress.drop"
+  }
+}
+actions {
+  preamble {
+    id: 21524913
+    name: "MyEgress.egress_ipv4_forward"
+    alias: "egress_ipv4_forward"
+  }
+  params {
+    id: 1
+    name: "dstAddr"
+    bitwidth: 48
+  }
+  params {
+    id: 2
+    name: "port"
+    bitwidth: 9
+  }
+}
+actions {
+  preamble {
+    id: 24301839
+    name: "MyEgress.egress_count_tcpSyn"
+    alias: "egress_count_tcpSyn"
+  }
+}
+actions {
+  preamble {
+    id: 19492977
+    name: "MyEgress.egress_decrease_tcpSyn"
+    alias: "egress_decrease_tcpSyn"
+  }
+}
+registers {
+  preamble {
+    id: 376009035
+    name: "blacklist_register"
+    alias: "blacklist_register"
+  }
+  type_spec {
+    bitstring {
+      bit {
+        bitwidth: 32
+      }
+    }
+  }
+  size: 1024
+}
+registers {
+  preamble {
+    id: 378561470
+    name: "ingress_syn_register"
+    alias: "ingress_syn_register"
+  }
+  type_spec {
+    bitstring {
+      bit {
+        bitwidth: 32
+      }
+    }
+  }
+  size: 1024
+}
+registers {
+  preamble {
+    id: 378697646
+    name: "ingress_victimIp_register"
+    alias: "ingress_victimIp_register"
+  }
+  type_spec {
+    bitstring {
+      bit {
+        bitwidth: 32
+      }
+    }
+  }
+  size: 1024
+}
+registers {
+  preamble {
+    id: 381604587
+    name: "ingress_victimPort_register"
+    alias: "ingress_victimPort_register"
+  }
+  type_spec {
+    bitstring {
+      bit {
+        bitwidth: 32
+      }
+    }
+  }
+  size: 1024
+}
+registers {
+  preamble {
+    id: 381923443
+    name: "egress_syn_register"
+    alias: "egress_syn_register"
+  }
+  type_spec {
+    bitstring {
+      bit {
+        bitwidth: 32
+      }
+    }
+  }
+  size: 1024
+}
+registers {
+  preamble {
+    id: 376636265
+    name: "egress_victimIp_register"
+    alias: "egress_victimIp_register"
+  }
+  type_spec {
+    bitstring {
+      bit {
+        bitwidth: 32
+      }
+    }
+  }
+  size: 1024
+}
+registers {
+  preamble {
+    id: 384204932
+    name: "egress_victimPort_register"
+    alias: "egress_victimPort_register"
+  }
+  type_spec {
+    bitstring {
+      bit {
+        bitwidth: 32
+      }
+    }
+  }
+  size: 1024
+}
+type_info {
+}

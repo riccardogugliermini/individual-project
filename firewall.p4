@@ -504,15 +504,15 @@ control MyEgress(inout headers hdr,
      action drop() {
         mark_to_drop(standard_metadata);
     }
-    
-    action ipv4_forward(macAddr_t dstAddr, egressSpec_t port) {
+
+    action egress_ipv4_forward(macAddr_t dstAddr, egressSpec_t port) {
         standard_metadata.egress_spec = port;
         hdr.ethernet.srcAddr = hdr.ethernet.dstAddr;
         hdr.ethernet.dstAddr = dstAddr;
         hdr.ipv4.ttl = hdr.ipv4.ttl - 1;
     }
-    
-    action count_tcpSyn() {
+
+    action egress_count_tcpSyn() {
         log_msg("count_tcpSyn: standard_metadata.ingress_port = {}", {standard_metadata.ingress_port});
         log_msg("count_tcpSyn: standard_metadata.egress_port = {}", {standard_metadata.ingress_port});
         log_msg("count_tcpSyn: standard_metadata.egress_spec = {}", {standard_metadata.egress_spec});
@@ -524,7 +524,7 @@ control MyEgress(inout headers hdr,
         egress_syn_register.write((bit<32>)meta.hashindex2, meta.syncounter2);
     }
 
-    action decrease_tcpSyn() {
+    action egress_decrease_tcpSyn() {
         log_msg("count_tcpSyn: standard_metadata.ingress_port = {}", {standard_metadata.ingress_port});
         log_msg("count_tcpSyn: standard_metadata.egress_port = {}", {standard_metadata.ingress_port});
         log_msg("count_tcpSyn: standard_metadata.egress_spec = {}", {standard_metadata.egress_spec});
@@ -544,7 +544,7 @@ control MyEgress(inout headers hdr,
             hdr.ipv4.dstAddr: lpm;
         }
         actions = {
-            ipv4_forward;
+            egress_ipv4_forward;
             drop;
             NoAction;
         }
@@ -559,12 +559,12 @@ control MyEgress(inout headers hdr,
             //hdr.tcp.flags: exact;
         }
         actions = {
-            count_tcpSyn;
+            egress_count_tcpSyn;
             drop;
             NoAction;
         }
         size = 1024;
-        const default_action = count_tcpSyn();
+        const default_action = egress_count_tcpSyn();
     }
 
 
@@ -575,12 +575,12 @@ control MyEgress(inout headers hdr,
             //hdr.tcp.flags: exact;
         }
         actions = {
-            decrease_tcpSyn;
+            egress_decrease_tcpSyn;
             drop;
             NoAction;
         }
         size = 1024;
-        const default_action = decrease_tcpSyn();
+        const default_action = egress_decrease_tcpSyn();
     }
 
 
@@ -599,14 +599,14 @@ control MyEgress(inout headers hdr,
                 hash(  meta.hashindex1,
                         HashAlgorithm.crc32,
                         10w0,
-                        {hdr.ipv4.srcAddr, hdr.ipv4.dstAddr},
+                        {hdr.ipv4.dstAddr},
                         10w1023
                 );
                 // Generate meta.hashindex2 for bloom filter index
                 hash(  meta.hashindex2,
                         HashAlgorithm.crc16,
                         10w0,
-                        {hdr.ipv4.srcAddr, hdr.ipv4.dstAddr},
+                        {hdr.ipv4.dstAddr},
                         10w1023
                 );
 
