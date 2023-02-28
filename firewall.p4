@@ -228,7 +228,7 @@ control MyIngress(inout headers hdr, inout metadata meta, inout standard_metadat
         meta.droppedcounter1 = meta.droppedcounter1 + 1;
         meta.droppedcounter2 = meta.droppedcounter2 + 1;
         blacklistIndex.read(meta.blacklisindex, 0);
-        blacklist.write((bit<32>)meta.blacklistIndex, meta.srcAddr);
+        blacklist_register.write((bit<32>)meta.blacklistIndex, meta.srcAddr);
         meta.blacklisindex = meta.blacklisindex + 1;
         blacklistIndex.write(0, meta.blacklisindex);
     }
