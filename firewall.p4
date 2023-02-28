@@ -591,7 +591,7 @@ control MyEgress(inout headers hdr,
 
             //KnownVictim_table.apply();
 
-            ipv4_lpm.apply();
+            egress_ipv4_lpm.apply();
 
             if (hdr.tcp.isValid()) {
 
@@ -613,7 +613,7 @@ control MyEgress(inout headers hdr,
                 // ACK
                 //if (((hdr.tcp.flags >> 1) & 1) != 0) {
                 if (hdr.tcp.ack == 1) {
-                    SYN_decrease_table.apply();
+                    egress_SYN_decrease_table.apply();
                     log_msg("TCP ACK");
                 }
 
@@ -641,7 +641,7 @@ control MyEgress(inout headers hdr,
                         drop();
                     }
 
-                    SYN_count_table.apply();
+                    egress_SYN_count_table.apply();
                 }
             }
         }
