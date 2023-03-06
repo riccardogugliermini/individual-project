@@ -436,13 +436,13 @@ control MyIngress(inout headers hdr, inout metadata meta, inout standard_metadat
                             log_msg("The targeted DoS UDP: {}", {hdr.tcp.dstPort});
                             ingress_victimIp_register.write((bit<32>)meta.hashindex1, hdr.ipv4.dstAddr);
                             ingress_victimPort_register.write((bit<32>)meta.hashindex1, (bit<32>)hdr.tcp.dstPort);
-                            drop();
                             dropped_count_table.apply();
                             ingress_dropped_register.read(meta.droppedcounter1, (bit<32>)meta.hashindex1);
                             ingress_dropped_register.read(meta.droppedcounter2, (bit<32>)meta.hashindex2);
                             if ((meta.droppedcounter1 > DROPPED_PACKETS_TRESHOLD) && (meta.droppedcounter2 > DROPPED_PACKETS_TRESHOLD)){
                                 blacklist_add.apply();
                             }
+                            drop();
                         }
 
                         SYN_count_table.apply();
