@@ -205,8 +205,8 @@ control MyIngress(inout headers hdr, inout metadata meta, inout standard_metadat
 
         meta.droppedcounter1 = meta.droppedcounter1 + 1;
         meta.droppedcounter2 = meta.droppedcounter2 + 1;
-        ingress_syn_register.write((bit<32>)meta.hashindex1, meta.droppedcounter1);
-        ingress_syn_register.write((bit<32>)meta.hashindex2, meta.droppedcounter1);
+        ingress_dropped_register.write((bit<32>)meta.hashindex1, meta.droppedcounter1);
+        ingress_dropped_register.write((bit<32>)meta.hashindex2, meta.droppedcounter1);
     }
 
     action reset_dropped() {
@@ -216,8 +216,8 @@ control MyIngress(inout headers hdr, inout metadata meta, inout standard_metadat
         log_msg("count_tcpSyn: meta.routerPort = {}", {meta.routerPort});
 
 
-        ingress_syn_register.write((bit<32>)meta.hashindex1, 0);
-        ingress_syn_register.write((bit<32>)meta.hashindex2, 0);
+        ingress_dropped_register.write((bit<32>)meta.hashindex1, 0);
+        ingress_dropped_register.write((bit<32>)meta.hashindex2, 0);
     }
 
     action add_to_blacklist() {
@@ -436,6 +436,8 @@ control MyIngress(inout headers hdr, inout metadata meta, inout standard_metadat
                             log_msg("The targeted DoS UDP: {}", {hdr.tcp.dstPort});
                             ingress_victimIp_register.write((bit<32>)meta.hashindex1, hdr.ipv4.dstAddr);
                             ingress_victimPort_register.write((bit<32>)meta.hashindex1, (bit<32>)hdr.tcp.dstPort);
+                            ingress_dropped_register.read(meta.droppedcounter1, (bit<32>)meta.hashindex1);
+                            ingress_dropped_register.read(meta.droppedcounter2, (bit<32>)meta.hashindex2);
                             dropped_count_table.apply();
                             ingress_dropped_register.read(meta.droppedcounter1, (bit<32>)meta.hashindex1);
                             ingress_dropped_register.read(meta.droppedcounter2, (bit<32>)meta.hashindex2);
