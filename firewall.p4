@@ -589,7 +589,7 @@ control MyEgress(inout headers hdr,
                     log_msg("INGRESS.Apply meta.syncounter1 = {}", {meta.syncounter1});
                     log_msg("INGRESS.Apply meta.syncounter2 = {}", {meta.syncounter2});
                     log_msg("INGRESS.Apply meta.portLimit = {}", {meta.portLimit});
-                    if ((meta.syncounter1 > EGRESS_SYN_THRESHOLD) && (meta.syncounter2 > EGRESS_SYN_THRESHOLD)){
+                    if ((meta.syncounter1 > EGRESS_SYN_TRESHOLD) && (meta.syncounter2 > EGRESS_SYN_TRESHOLD)){
                         log_msg("The attacker is: {}", {hdr.ipv4.srcAddr});
                         log_msg("The targeted DoS IP: {}", {hdr.ipv4.dstAddr});
                         log_msg("The targeted DoS UDP: {}", {hdr.tcp.dstPort});
