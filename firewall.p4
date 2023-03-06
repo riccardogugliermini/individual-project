@@ -380,7 +380,7 @@ control MyIngress(inout headers hdr, inout metadata meta, inout standard_metadat
             blacklist_register.read(meta.balcklistIP2, (bit<32>)meta.srcIpHash2);
 
             //If ip in blacklist then drop
-            if (meta.balcklistIP1 && meta.balcklistIP2) {
+            if (meta.balcklistIP1 == 1 && meta.balcklistIP2 == 1) {
                 drop();
             } else {
                 ipv4_lpm.apply();
