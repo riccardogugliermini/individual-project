@@ -88,8 +88,8 @@ struct metadata {
     bit<32>    localNetwork;
     bit<1>     localNetworkOriginated;
     bit<32>    srcAddr;
-    bit<32>    balcklistIP1;
-    bit<32>    balcklistIP2;
+    bit<1>    balcklistIP1;
+    bit<1>    balcklistIP2;
 }
 
 struct headers {
@@ -411,7 +411,7 @@ control MyIngress(inout headers hdr, inout metadata meta, inout standard_metadat
 
                         // If count is less than threshold/2 then remove from blacklist
                         if ((meta.syncounter1 > (OPEN_CONNECTIONS_TRESHOLD/2)) && (meta.syncounter2 > (OPEN_CONNECTIONS_TRESHOLD/2))){
-                            remove_from_blacklist.apply();
+                            blacklist_remove.apply();
                         }
                     }
 
