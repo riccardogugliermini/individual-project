@@ -81,8 +81,8 @@ struct metadata {
 
     bit<1>     balcklistIP1;
     bit<1>     balcklistIP2;
-    bit<32>    icmptimestamp1;
-    bit<32>    icmptimestamp2;
+    bit<48>    icmptimestamp1;
+    bit<48>    icmptimestamp2;
   
     bit<10>    synhashindex1;
     bit<10>    synhashindex2;
@@ -127,12 +127,12 @@ register <bit<32>>(1024) egress_victimPort_register;
 
 // ICMP Flood Ingress Bloom Filters
 register <bit<32>>(1024) ingress_icmp_register;
-register <bit<32>>(1024) ingress_timestamp_register;
+register <bit<48>>(1024) ingress_timestamp_register;
 
 
 const bit<32> DROPPED_PACKETS_TRESHOLD = 10;
 const bit<32> OPEN_CONNECTIONS_TRESHOLD = 5;
-const bit<32> ICMP_TIMESTAMP_TRESHOLD = 50000;
+const bit<48> ICMP_TIMESTAMP_TRESHOLD = 50000;
 const bit<32> ICMP_PACKETS_THRESHOLD = 10;
 const bit<32> EGRESS_SYN_TRESHOLD = 10;
 
@@ -248,11 +248,11 @@ control MyIngress(inout headers hdr, inout metadata meta, inout standard_metadat
     action update_timestamp() {
         log_msg("count_icmp: standard_metadata.ingress_port = {}", {standard_metadata.ingress_port});
         log_msg("count_icmp: standard_metadata.egress_port = {}", {standard_metadata.ingress_port});
-        log_msg("count_icmp: standard_metadata.egress_spec = {}", {standard_metadata.egress_spec});
+        log_msg("count_icmp: standard_metadata.ingress_global_timestamp = {}", {standard_metadata.ingress_global_timestamp});
         log_msg("count_icmp: meta.routerPort = {}", {meta.routerPort});
 
-        ingress_timestamp_register.write((bit<32>)meta.icmphashindex1, standard_metadata.enq_timestamp);
-        ingress_timestamp_register.write((bit<32>)meta.icmphashindex2, standard_metadata.enq_timestamp);
+        ingress_timestamp_register.write((bit<32>)meta.icmphashindex1, standard_metadata.ingress_global_timestamp);
+        ingress_timestamp_register.write((bit<32>)meta.icmphashindex2, standard_metadata.ingress_global_timestamp);
     }
 
     action count_dropped() {
