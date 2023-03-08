@@ -517,7 +517,7 @@ control MyIngress(inout headers hdr, inout metadata meta, inout standard_metadat
                     ingress_timestamp_register.read(meta.icmptimestamp1, (bit<32>)meta.icmphashindex1);
                     ingress_timestamp_register.read(meta.icmptimestamp2, (bit<32>)meta.icmphashindex2);
 
-                    if (meta.icmptimestamp1 > && meta.icmptimestamp2 > ) {
+                    if (meta.icmptimestamp1 > ICMP_TIMESTAMP_TRESHOLD && meta.icmptimestamp2 >  ICMP_TIMESTAMP_TRESHOLD) {
                         ICMP_reset_table.apply();
                     } 
 
