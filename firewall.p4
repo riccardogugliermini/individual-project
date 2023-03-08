@@ -132,7 +132,7 @@ register <bit<48>>(1024) ingress_timestamp_register;
 
 const bit<32> DROPPED_PACKETS_TRESHOLD = 10;
 const bit<32> OPEN_CONNECTIONS_TRESHOLD = 5;
-const bit<48> ICMP_TIMESTAMP_TRESHOLD = 1000;
+const bit<48> ICMP_TIMESTAMP_TRESHOLD = 5000000;
 const bit<32> ICMP_PACKETS_THRESHOLD = 10;
 const bit<32> EGRESS_SYN_TRESHOLD = 10;
 
@@ -519,7 +519,7 @@ control MyIngress(inout headers hdr, inout metadata meta, inout standard_metadat
                     ingress_timestamp_register.read(meta.icmptimestamp2, (bit<32>)meta.icmphashindex2);
 
                     log_msg("count_icmp: standard_metadata.ingress_global_timestamp = {}", {standard_metadata.ingress_global_timestamp});
-                    if (meta.icmptimestamp1 > (standard_metadata.ingress_global_timestamp + ICMP_TIMESTAMP_TRESHOLD) && meta.icmptimestamp2 > (standard_metadata.ingress_global_timestamp + ICMP_TIMESTAMP_TRESHOLD)) {
+                    if ( standard_metadata.ingress_global_timestamp > (meta.icmptimestamp1 + ICMP_TIMESTAMP_TRESHOLD) &&  standard_metadata.ingress_global_timestamp > ( meta.icmptimestamp2 + ICMP_TIMESTAMP_TRESHOLD)) {
                         ICMP_reset_table.apply();
                     } 
 
