@@ -126,7 +126,7 @@ register <bit<32>>(1024) egress_victimPort_register;
 
 
 // ICMP Flood Ingress Bloom Filters
-register <bit<32>>(1024) ingress_syn_register;
+register <bit<32>>(1024) ingress_icmp_register;
 register <bit<32>>(1024) ingress_timestamp_register;
 
 
