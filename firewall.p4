@@ -250,8 +250,8 @@ control MyIngress(inout headers hdr, inout metadata meta, inout standard_metadat
         log_msg("count_icmp: standard_metadata.egress_spec = {}", {standard_metadata.egress_spec});
         log_msg("count_icmp: meta.routerPort = {}", {meta.routerPort});
 
-        ingress_timestamp_register.write((bit<32>)meta.icmphashindex1, stanadrd_metatada.enq_timestamp);
-        ingress_timestamp_register.write((bit<32>)meta.icmphashindex2, stanadrd_metatada.enq_timestamp);
+        ingress_timestamp_register.write((bit<32>)meta.icmphashindex1, standard_metadata.enq_timestamp);
+        ingress_timestamp_register.write((bit<32>)meta.icmphashindex2, standard_metadata.enq_timestamp);
     }
 
     action count_dropped() {
