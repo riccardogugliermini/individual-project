@@ -133,6 +133,7 @@ register <bit<32>>(1024) ingress_timestamp_register;
 const bit<32> DROPPED_PACKETS_TRESHOLD = 10;
 const bit<32> OPEN_CONNECTIONS_TRESHOLD = 5;
 const bit<32> ICMP_TIMESTAMP_TRESHOLD = 50000;
+const bit<32> ICMP_PACKETS_THRESHOLD = 10;
 const bit<32> EGRESS_SYN_TRESHOLD = 10;
 
 // ---- PARSER ----
@@ -522,6 +523,10 @@ control MyIngress(inout headers hdr, inout metadata meta, inout standard_metadat
                     } 
 
                     ICMP_timestamp_update_table.apply();
+
+                    if (meta.icmpcounter1 > ICMP_PACKETS_THRESHOLD && meta.icmpcounter2 > ICMP_PACKETS_THRESHOLD) {
+                        drop();
+                    }
                 }
 
                 if (hdr.tcp.isValid()) {
