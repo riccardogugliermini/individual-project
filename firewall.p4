@@ -132,7 +132,7 @@ register <bit<48>>(1024) ingress_timestamp_register;
 
 const bit<32> DROPPED_PACKETS_TRESHOLD = 10;
 const bit<32> OPEN_CONNECTIONS_TRESHOLD = 5;
-const bit<48> ICMP_TIMESTAMP_TRESHOLD = 50000;
+const bit<48> ICMP_TIMESTAMP_TRESHOLD = 1000;
 const bit<32> ICMP_PACKETS_THRESHOLD = 10;
 const bit<32> EGRESS_SYN_TRESHOLD = 10;
 
