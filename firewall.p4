@@ -76,10 +76,21 @@ struct metadata {
     bit<32>    syncounter2;
     bit<32>    droppedcounter1;
     bit<32>    droppedcounter2;
-    bit<10>    hashindex1;
-    bit<10>    hashindex2;
+    bit<32>    icmpcounter1;
+    bit<32>    icmpcounter2;
+
+    bit<1>     balcklistIP1;
+    bit<1>     balcklistIP2;
+    bit<32>    icmptimestamp1;
+    bit<32>    icmptimestamp2;
+  
+    bit<10>    synhashindex1;
+    bit<10>    synhashindex2;
+    bit<10>    icmphashindex1;
+    bit<10>    icmphashindex2;
     bit<10>    srcIpHash1;
     bit<10>    srcIpHash2;
+
     bit<32>    portNumber;
     bit<32>    routerPort;
     bit<32>    portLimit;
@@ -88,8 +99,7 @@ struct metadata {
     bit<32>    localNetwork;
     bit<1>     localNetworkOriginated;
     bit<32>    srcAddr;
-    bit<1>    balcklistIP1;
-    bit<1>    balcklistIP2;
+    
 }
 
 struct headers {
@@ -101,18 +111,28 @@ struct headers {
 
 register <bit<1>>(1024) blacklist_register;
 
+
+// SYN Flood Ingress Bloom Filters
 register <bit<32>>(1024) ingress_syn_register;
 register <bit<32>>(1024) ingress_dropped_register;
-register <bit<32>>(1024) ingress_timestamp_register;
+//register <bit<32>>(1024) ingress_timestamp_register;
 register <bit<32>>(1024) ingress_victimIp_register;
 register <bit<32>>(1024) ingress_victimPort_register;
 
+// SYN Flood Egress Bloom Filters
 register <bit<32>>(1024) egress_syn_register;
 register <bit<32>>(1024) egress_victimIp_register;
 register <bit<32>>(1024) egress_victimPort_register;
 
+
+// ICMP Flood Ingress Bloom Filters
+register <bit<32>>(1024) ingress_syn_register;
+register <bit<32>>(1024) ingress_timestamp_register;
+
+
 const bit<32> DROPPED_PACKETS_TRESHOLD = 10;
 const bit<32> OPEN_CONNECTIONS_TRESHOLD = 5;
+const bit<32> ICMP_TIMESTAMP_TRESHOLD = 50000;
 const bit<32> EGRESS_SYN_TRESHOLD = 10;
 
 // ---- PARSER ----
@@ -178,8 +198,8 @@ control MyIngress(inout headers hdr, inout metadata meta, inout standard_metadat
 
         meta.syncounter1 = meta.syncounter1 + 1;
         meta.syncounter2 = meta.syncounter2 + 1;
-        ingress_syn_register.write((bit<32>)meta.hashindex1, meta.syncounter1);
-        ingress_syn_register.write((bit<32>)meta.hashindex2, meta.syncounter2);
+        ingress_syn_register.write((bit<32>)meta.synhashindex1, meta.syncounter1);
+        ingress_syn_register.write((bit<32>)meta.synhashindex2, meta.syncounter2);
     }
 
     action decrease_tcpSyn() {
@@ -193,11 +213,48 @@ control MyIngress(inout headers hdr, inout metadata meta, inout standard_metadat
             meta.syncounter2 = meta.syncounter2 - 1;
         }
 
-        ingress_syn_register.write((bit<32>)meta.hashindex1, meta.syncounter1);
-        ingress_syn_register.write((bit<32>)meta.hashindex2, meta.syncounter2);
+        ingress_syn_register.write((bit<32>)meta.synhashindex1, meta.syncounter1);
+        ingress_syn_register.write((bit<32>)meta.synhashindex2, meta.syncounter2);
     }
 
-      action count_dropped() {
+    action count_icmp() {
+        log_msg("count_icmp: standard_metadata.ingress_port = {}", {standard_metadata.ingress_port});
+        log_msg("count_icmp: standard_metadata.egress_port = {}", {standard_metadata.ingress_port});
+        log_msg("count_icmp: standard_metadata.egress_spec = {}", {standard_metadata.egress_spec});
+        log_msg("count_icmp: meta.routerPort = {}", {meta.routerPort});
+
+        meta.icmpcounter1 = meta.icmpcounter1 + 1;
+        meta.icmpcounter2 = meta.icmpcounter2 + 1;
+        ingress_icmp_register.write((bit<32>)meta.icmphashindex1, meta.icmpcounter1);
+        ingress_icmp_register.write((bit<32>)meta.icmphashindex2, meta.icmpcounter2);
+    }
+
+    action reset_icmp() {
+        log_msg("count_icmp: standard_metadata.ingress_port = {}", {standard_metadata.ingress_port});
+        log_msg("count_icmp: standard_metadata.egress_port = {}", {standard_metadata.ingress_port});
+        log_msg("count_icmp: standard_metadata.egress_spec = {}", {standard_metadata.egress_spec});
+        log_msg("count_icmp: meta.routerPort = {}", {meta.routerPort});
+
+        if (meta.icmpcounter1 > 0 && meta.icmpcounter2 > 0) {
+            meta.icmpcounter1 = 0;
+            meta.icmpcounter2 = 0;
+        }
+
+        ingress_icmp_register.write((bit<32>)meta.icmphashindex1, 0);
+        ingress_icmp_register.write((bit<32>)meta.icmphashindex2, 0);
+    }
+
+    action update_timestamp() {
+        log_msg("count_icmp: standard_metadata.ingress_port = {}", {standard_metadata.ingress_port});
+        log_msg("count_icmp: standard_metadata.egress_port = {}", {standard_metadata.ingress_port});
+        log_msg("count_icmp: standard_metadata.egress_spec = {}", {standard_metadata.egress_spec});
+        log_msg("count_icmp: meta.routerPort = {}", {meta.routerPort});
+
+        ingress_timestamp_register.write((bit<32>)meta.icmphashindex1, stanadrd_metatada.enq_timestamp);
+        ingress_timestamp_register.write((bit<32>)meta.icmphashindex2, stanadrd_metatada.enq_timestamp);
+    }
+
+    action count_dropped() {
         log_msg("count_tcpSyn: standard_metadata.ingress_port = {}", {standard_metadata.ingress_port});
         log_msg("count_tcpSyn: standard_metadata.egress_port = {}", {standard_metadata.ingress_port});
         log_msg("count_tcpSyn: standard_metadata.egress_spec = {}", {standard_metadata.egress_spec});
@@ -205,8 +262,8 @@ control MyIngress(inout headers hdr, inout metadata meta, inout standard_metadat
 
         meta.droppedcounter1 = meta.droppedcounter1 + 1;
         meta.droppedcounter2 = meta.droppedcounter2 + 1;
-        ingress_dropped_register.write((bit<32>)meta.hashindex1, meta.droppedcounter1);
-        ingress_dropped_register.write((bit<32>)meta.hashindex2, meta.droppedcounter1);
+        ingress_dropped_register.write((bit<32>)meta.synhashindex1, meta.droppedcounter1);
+        ingress_dropped_register.write((bit<32>)meta.synhashindex2, meta.droppedcounter1);
     }
 
     action reset_dropped() {
@@ -216,8 +273,8 @@ control MyIngress(inout headers hdr, inout metadata meta, inout standard_metadat
         log_msg("count_tcpSyn: meta.routerPort = {}", {meta.routerPort});
 
 
-        ingress_dropped_register.write((bit<32>)meta.hashindex1, 0);
-        ingress_dropped_register.write((bit<32>)meta.hashindex2, 0);
+        ingress_dropped_register.write((bit<32>)meta.synhashindex1, 0);
+        ingress_dropped_register.write((bit<32>)meta.synhashindex2, 0);
     }
 
     action add_to_blacklist() {
@@ -312,6 +369,52 @@ control MyIngress(inout headers hdr, inout metadata meta, inout standard_metadat
         const default_action = decrease_tcpSyn();
     }
 
+    table ICMP_count_table {
+        key = {
+            standard_metadata.ingress_port: exact;
+            //meta.portLimit: exact;
+            //hdr.tcp.flags: exact;
+        }
+        actions = {
+            count_icmp;
+            drop;
+            NoAction;
+        }
+        size = 1024;
+        const default_action = count_icmp();
+    }
+
+
+    table ICMP_reset_table {
+        key = {
+            standard_metadata.ingress_port: exact;
+            //meta.portLimit: exact;
+            //hdr.tcp.flags: exact;
+        }
+        actions = {
+            reset_icmp;
+            drop;
+            NoAction;
+        }
+        size = 1024;
+        const default_action = reset_icmp();
+    }
+
+    table ICMP_timestamp_update_table {
+        key = {
+            standard_metadata.ingress_port: exact;
+            //meta.portLimit: exact;
+            //hdr.tcp.flags: exact;
+        }
+        actions = {
+            update_timestamp;
+            drop;
+            NoAction;
+        }
+        size = 1024;
+        const default_action = update_timestamp();
+    }
+
     table dropped_count_table {
         key = {
             standard_metadata.ingress_port: exact;
@@ -376,6 +479,7 @@ control MyIngress(inout headers hdr, inout metadata meta, inout standard_metadat
                         10w1023
                 );
 
+            // Read blacklist at indexs generated
             blacklist_register.read(meta.balcklistIP1, (bit<32>)meta.srcIpHash1);
             blacklist_register.read(meta.balcklistIP2, (bit<32>)meta.srcIpHash2);
 
@@ -385,17 +489,52 @@ control MyIngress(inout headers hdr, inout metadata meta, inout standard_metadat
             } else {
                 ipv4_lpm.apply();
 
+                // Generate meta.icmphashindex1 for ICMP bloom filter index
+                hash(  meta.icmphashindex1,
+                        HashAlgorithm.crc32,
+                        10w0,
+                        {hdr.ipv4.dstAddr},
+                        10w1023
+                );
+                // Generate meta.icmphashindex2 for ICMP bloom filter index
+                hash(  meta.icmphashindex2,
+                        HashAlgorithm.crc16,
+                        10w0,
+                        {hdr.ipv4.dstAddr},
+                        10w1023
+                );
+
+                // Check if packet is ICMP 
+                if (hdr.ipv4.protocol == IP_PROTOCOL_ICMP) {
+                    // Read current counters
+                    ingress_icmp_register.read(meta.icmpcounter1, (bit<32>)meta.icmphashindex1);
+                    ingress_icmp_register.read(meta.icmpcounter2, (bit<32>)meta.icmphashindex2);
+
+                    //Count 
+                    ICMP_count_table.apply();
+
+                    // Read current timestamps
+                    ingress_timestamp_register.read(meta.icmptimestamp1, (bit<32>)meta.icmphashindex1);
+                    ingress_timestamp_register.read(meta.icmptimestamp2, (bit<32>)meta.icmphashindex2);
+
+                    if (meta.icmptimestamp1 > && meta.icmptimestamp2 > ) {
+                        ICMP_reset_table.apply();
+                    } 
+
+                    ICMP_timestamp_update_table.apply();
+                }
+
                 if (hdr.tcp.isValid()) {
 
-                    // Generate meta.hashindex1 for bloom filter index
-                    hash(  meta.hashindex1,
+                    // Generate meta.synhashindex1 for SYN bloom filter index
+                    hash(  meta.synhashindex1,
                             HashAlgorithm.crc32,
                             10w0,
                             {hdr.ipv4.srcAddr, hdr.ipv4.dstAddr},
                             10w1023
                     );
-                    // Generate meta.hashindex2 for bloom filter index
-                    hash(  meta.hashindex2,
+                    // Generate meta.synhashindex2 for SYN bloom filter index
+                    hash(  meta.synhashindex2,
                             HashAlgorithm.crc16,
                             10w0,
                             {hdr.ipv4.srcAddr, hdr.ipv4.dstAddr},
@@ -422,8 +561,8 @@ control MyIngress(inout headers hdr, inout metadata meta, inout standard_metadat
 
 
                         // Is this a known attacker?
-                        ingress_syn_register.read(meta.syncounter1, (bit<32>)meta.hashindex1);
-                        ingress_syn_register.read(meta.syncounter2, (bit<32>)meta.hashindex2);
+                        ingress_syn_register.read(meta.syncounter1, (bit<32>)meta.synhashindex1);
+                        ingress_syn_register.read(meta.syncounter2, (bit<32>)meta.synhashindex2);
                         log_msg("INGRESS.hdr.ipv4.srcAddr{}", {hdr.ipv4.srcAddr});
                         log_msg("INGRESS.hdr.ipv4.dstAddr = {}", {hdr.ipv4.dstAddr});
                         log_msg("INGRESS.hdr.tcp.dstPort = {}", {hdr.tcp.dstPort});
@@ -434,13 +573,13 @@ control MyIngress(inout headers hdr, inout metadata meta, inout standard_metadat
                             log_msg("The attacker is: {}", {hdr.ipv4.srcAddr});
                             log_msg("The targeted DoS IP: {}", {hdr.ipv4.dstAddr});
                             log_msg("The targeted DoS UDP: {}", {hdr.tcp.dstPort});
-                            ingress_victimIp_register.write((bit<32>)meta.hashindex1, hdr.ipv4.dstAddr);
-                            ingress_victimPort_register.write((bit<32>)meta.hashindex1, (bit<32>)hdr.tcp.dstPort);
-                            ingress_dropped_register.read(meta.droppedcounter1, (bit<32>)meta.hashindex1);
-                            ingress_dropped_register.read(meta.droppedcounter2, (bit<32>)meta.hashindex2);
+                            ingress_victimIp_register.write((bit<32>)meta.synhashindex1, hdr.ipv4.dstAddr);
+                            ingress_victimPort_register.write((bit<32>)meta.synhashindex1, (bit<32>)hdr.tcp.dstPort);
+                            ingress_dropped_register.read(meta.droppedcounter1, (bit<32>)meta.synhashindex1);
+                            ingress_dropped_register.read(meta.droppedcounter2, (bit<32>)meta.synhashindex2);
                             dropped_count_table.apply();
-                            ingress_dropped_register.read(meta.droppedcounter1, (bit<32>)meta.hashindex1);
-                            ingress_dropped_register.read(meta.droppedcounter2, (bit<32>)meta.hashindex2);
+                            ingress_dropped_register.read(meta.droppedcounter1, (bit<32>)meta.synhashindex1);
+                            ingress_dropped_register.read(meta.droppedcounter2, (bit<32>)meta.synhashindex2);
                             if ((meta.droppedcounter1 > DROPPED_PACKETS_TRESHOLD) && (meta.droppedcounter2 > DROPPED_PACKETS_TRESHOLD)){
                                 blacklist_add.apply();
                             }
@@ -479,8 +618,8 @@ control MyEgress(inout headers hdr,
 
         meta.syncounter1 = meta.syncounter1 + 1;
         meta.syncounter2 = meta.syncounter2 + 1;
-        egress_syn_register.write((bit<32>)meta.hashindex1, meta.syncounter1);
-        egress_syn_register.write((bit<32>)meta.hashindex2, meta.syncounter2);
+        egress_syn_register.write((bit<32>)meta.synhashindex1, meta.syncounter1);
+        egress_syn_register.write((bit<32>)meta.synhashindex2, meta.syncounter2);
     }
 
     action egress_decrease_tcpSyn() {
@@ -494,8 +633,8 @@ control MyEgress(inout headers hdr,
             meta.syncounter2 = meta.syncounter2 - 1;
         }
 
-        egress_syn_register.write((bit<32>)meta.hashindex1, meta.syncounter1);
-        egress_syn_register.write((bit<32>)meta.hashindex2, meta.syncounter2);
+        egress_syn_register.write((bit<32>)meta.synhashindex1, meta.syncounter1);
+        egress_syn_register.write((bit<32>)meta.synhashindex2, meta.syncounter2);
     }
 
     table egress_ipv4_lpm {
@@ -554,15 +693,15 @@ control MyEgress(inout headers hdr,
 
             if (hdr.tcp.isValid()) {
 
-                // Generate meta.hashindex1 for bloom filter index
-                hash(  meta.hashindex1,
+                // Generate meta.synhashindex1 for bloom filter index
+                hash(  meta.synhashindex1,
                         HashAlgorithm.crc32,
                         10w0,
                         {hdr.ipv4.dstAddr},
                         10w1023
                 );
-                // Generate meta.hashindex2 for bloom filter index
-                hash(  meta.hashindex2,
+                // Generate meta.synhashindex2 for bloom filter index
+                hash(  meta.synhashindex2,
                         HashAlgorithm.crc16,
                         10w0,
                         {hdr.ipv4.dstAddr},
@@ -583,8 +722,8 @@ control MyEgress(inout headers hdr,
 
 
                     // Is this a known attacker?
-                    egress_syn_register.read(meta.syncounter1, (bit<32>)meta.hashindex1);
-                    egress_syn_register.read(meta.syncounter2, (bit<32>)meta.hashindex2);
+                    egress_syn_register.read(meta.syncounter1, (bit<32>)meta.synhashindex1);
+                    egress_syn_register.read(meta.syncounter2, (bit<32>)meta.synhashindex2);
                     log_msg("INGRESS.hdr.ipv4.srcAddr{}", {hdr.ipv4.srcAddr});
                     log_msg("INGRESS.hdr.ipv4.dstAddr = {}", {hdr.ipv4.dstAddr});
                     log_msg("INGRESS.hdr.tcp.dstPort = {}", {hdr.tcp.dstPort});
@@ -595,8 +734,8 @@ control MyEgress(inout headers hdr,
                         log_msg("The attacker is: {}", {hdr.ipv4.srcAddr});
                         log_msg("The targeted DoS IP: {}", {hdr.ipv4.dstAddr});
                         log_msg("The targeted DoS UDP: {}", {hdr.tcp.dstPort});
-                        egress_victimIp_register.write((bit<32>)meta.hashindex1, hdr.ipv4.dstAddr);
-                        egress_victimPort_register.write((bit<32>)meta.hashindex1, (bit<32>)hdr.tcp.dstPort);
+                        egress_victimIp_register.write((bit<32>)meta.synhashindex1, hdr.ipv4.dstAddr);
+                        egress_victimPort_register.write((bit<32>)meta.synhashindex1, (bit<32>)hdr.tcp.dstPort);
                         drop();
                     }
 
