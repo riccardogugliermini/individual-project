@@ -109,7 +109,7 @@ struct headers {
     icmp_t       icmp;
 }
 
-register <bit<1>>(1024) blacklist_register;
+register <bit<1>>(1024) whitelist_register;
 
 
 // SYN Flood Ingress Bloom Filter - Open Connections Counter
@@ -201,8 +201,8 @@ control MyIngress(inout headers hdr, inout metadata meta, inout standard_metadat
 
     action decrease_tcpSyn() {
         if (meta.syncounter1 > 0 && meta.syncounter2 > 0) {
-            meta.syncounter1 = meta.syncounter1 - 1;
-            meta.syncounter2 = meta.syncounter2 - 1;
+            meta.syncounter1 = 0;
+            meta.syncounter2 = 0;
         }
 
         ingress_syn_register.write((bit<32>)meta.synhashindex1, meta.syncounter1);
@@ -235,20 +235,20 @@ control MyIngress(inout headers hdr, inout metadata meta, inout standard_metadat
 
 
 
-    /* --- MANGE BLACKLIST ---- */
-    action add_to_blacklist() {
-        blacklist_register.write((bit<32>)meta.srcIpHash1, 1);
-        blacklist_register.write((bit<32>)meta.srcIpHash2, 1);
+    /* --- MANGE WHITELIST ---- */
+    action add_to_whitelist() {
+        whitelist_register.write((bit<32>)meta.srcIpHash1, 1);
+        whitelist_register.write((bit<32>)meta.srcIpHash2, 1);
 
-        log_msg("add_to_blacklist: added to blacklist");
+        log_msg("add_to_whitelist: added to whitelist");
 
     }
 
-    action remove_from_blacklist() {
-        blacklist_register.write((bit<32>)meta.srcIpHash1, 0);
-        blacklist_register.write((bit<32>)meta.srcIpHash2, 0);
+    action remove_from_whitelist() {
+        whitelist_register.write((bit<32>)meta.srcIpHash1, 0);
+        whitelist_register.write((bit<32>)meta.srcIpHash2, 0);
 
-         log_msg("remove_from_blacklist: removed from blacklist");
+         log_msg("remove_from_whitelist: removed from whitelist");
     }
 
 
@@ -302,30 +302,30 @@ control MyIngress(inout headers hdr, inout metadata meta, inout standard_metadat
         default_action = drop();
     }
 
-    table blacklist_add {
+    table whitelist_add {
         key = {
             hdr.ipv4.srcAddr: lpm;
         }
 
         actions = {
-            add_to_blacklist;
+            add_to_whitelist;
             NoAction;
             drop;
         }
-        default_action = add_to_blacklist();
+        default_action = add_to_whitelist();
     }
 
-    table blacklist_remove {
+    table whitelist_remove {
         key = {
             hdr.ipv4.srcAddr: lpm;
         }
 
         actions = {
-            remove_from_blacklist;
+            remove_from_whitelist;
             NoAction;
             drop;
         }
-        default_action = remove_from_blacklist();
+        default_action = remove_from_whitelist();
     }
 
     table SYN_count_table {
@@ -444,14 +444,14 @@ control MyIngress(inout headers hdr, inout metadata meta, inout standard_metadat
 
             meta.srcAddr = hdr.ipv4.srcAddr;
 
-            // Generate meta.srcIpHash1 for blacklist index
+            // Generate meta.srcIpHash1 for whitelist index
             hash(  meta.srcIpHash1,
                         HashAlgorithm.crc32,
                         10w0,
                         {hdr.ipv4.srcAddr},
                         10w1023
                 );
-            // Generate meta.srcIpHash2 for blacklist index
+            // Generate meta.srcIpHash2 for whitelist index
             hash(  meta.srcIpHash2,
                         HashAlgorithm.crc16,
                         10w0,
@@ -460,12 +460,12 @@ control MyIngress(inout headers hdr, inout metadata meta, inout standard_metadat
                 );
 
             // Read blacklist at indexs generated
-            blacklist_register.read(meta.balcklistIP1, (bit<32>)meta.srcIpHash1);
-            blacklist_register.read(meta.balcklistIP2, (bit<32>)meta.srcIpHash2);
+            whitelist_register.read(meta.balcklistIP1, (bit<32>)meta.srcIpHash1);
+            whitelist_register.read(meta.balcklistIP2, (bit<32>)meta.srcIpHash2);
 
             // If ip in blacklist then drop
             if (meta.balcklistIP1 == 1 && meta.balcklistIP2 == 1) {
-                drop();
+                //drop();
             } else {
                 ipv4_lpm.apply();
 
@@ -525,14 +525,14 @@ control MyIngress(inout headers hdr, inout metadata meta, inout standard_metadat
                     hash(  meta.synhashindex1,
                             HashAlgorithm.crc32,
                             10w0,
-                            {hdr.ipv4.srcAddr, hdr.ipv4.dstAddr},
+                            {hdr.ipv4.srcAddr},
                             10w1023
                     );
                     // Generate meta.synhashindex2 for SYN bloom filter index
                     hash(  meta.synhashindex2,
                             HashAlgorithm.crc16,
                             10w0,
-                            {hdr.ipv4.srcAddr, hdr.ipv4.dstAddr},
+                            {hdr.ipv4.srcAddr},
                             10w1023
                     );
 
@@ -544,9 +544,9 @@ control MyIngress(inout headers hdr, inout metadata meta, inout standard_metadat
                         SYN_decrease_table.apply();
 
                         // If count is less than threshold/2 then remove from blacklist
-                        if ((meta.syncounter1 > (OPEN_CONNECTIONS_TRESHOLD/2)) && (meta.syncounter2 > (OPEN_CONNECTIONS_TRESHOLD/2))){
-                            blacklist_remove.apply();
-                        }
+                        // if ((meta.syncounter1 > (OPEN_CONNECTIONS_TRESHOLD/2)) && (meta.syncounter2 > (OPEN_CONNECTIONS_TRESHOLD/2))){
+                        //     blacklist_remove.apply();
+                        // }
                     }
 
                     //SYN request
@@ -558,29 +558,34 @@ control MyIngress(inout headers hdr, inout metadata meta, inout standard_metadat
                         ingress_syn_register.read(meta.syncounter2, (bit<32>)meta.synhashindex2);
                         log_msg("INGRESS.Apply meta.syncounter1 = {}", {meta.syncounter1});
                         log_msg("INGRESS.Apply meta.syncounter2 = {}", {meta.syncounter2});
-                        
-                       
-                        // Check if syn counters exceed Open Connection threshold
-                        if ((meta.syncounter1 > OPEN_CONNECTIONS_TRESHOLD) && (meta.syncounter2 > OPEN_CONNECTIONS_TRESHOLD)){
-                            // Fetch dropped packet counters
-                            ingress_dropped_register.read(meta.droppedcounter1, (bit<32>)meta.synhashindex1);
-                            ingress_dropped_register.read(meta.droppedcounter2, (bit<32>)meta.synhashindex2);
 
-                            // Increase dropped packet counters
-                            dropped_count_table.apply();
-                            
-                            // If dropped packet counters exceed limit, add to blacklist
-                            if ((meta.droppedcounter1 > DROPPED_PACKETS_TRESHOLD) && (meta.droppedcounter2 > DROPPED_PACKETS_TRESHOLD)){
-                                blacklist_add.apply();
-                            }
-
-                            // Drop packet
+                        SYN_count_table.apply();
+                        if ((meta.syncounter1 == 0 || meta.syncounter2 == 0) || (meta.syncounter1 > 4 || meta.syncounter2 < 4)) {
                             drop();
                         }
+                    
+                       
+                        // // Check if syn counters exceed Open Connection threshold
+                        // if ((meta.syncounter1 > OPEN_CONNECTIONS_TRESHOLD) && (meta.syncounter2 > OPEN_CONNECTIONS_TRESHOLD)){
+                        //     // Fetch dropped packet counters
+                        //     ingress_dropped_register.read(meta.droppedcounter1, (bit<32>)meta.synhashindex1);
+                        //     ingress_dropped_register.read(meta.droppedcounter2, (bit<32>)meta.synhashindex2);
+
+                        //     // Increase dropped packet counters
+                        //     dropped_count_table.apply();
+                            
+                        //     // If dropped packet counters exceed limit, add to blacklist
+                        //     if ((meta.droppedcounter1 > DROPPED_PACKETS_TRESHOLD) && (meta.droppedcounter2 > DROPPED_PACKETS_TRESHOLD)){
+                        //         blacklist_add.apply();
+                        //     }
+
+                        //     // Drop packet
+                        //     drop();
+                        // }
                         
 
-                        // Count TCP SYN open connection
-                        SYN_count_table.apply();
+                        // // Count TCP SYN open connection
+                        // SYN_count_table.apply();
                     }
                 }
             }
