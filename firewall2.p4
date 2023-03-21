@@ -560,7 +560,7 @@ control MyIngress(inout headers hdr, inout metadata meta, inout standard_metadat
                         log_msg("INGRESS.Apply meta.syncounter2 = {}", {meta.syncounter2});
 
                         SYN_count_table.apply();
-                        if ((meta.syncounter1 == 0 || meta.syncounter2 == 0) || (meta.syncounter1 > 4 || meta.syncounter2 < 4)) {
+                        if ((meta.syncounter1 == 0 || meta.syncounter2 == 0) || (meta.syncounter1 > 4 || meta.syncounter2 > 4)) {
                             drop();
                         }
                     
