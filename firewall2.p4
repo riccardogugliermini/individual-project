@@ -460,13 +460,13 @@ control MyIngress(inout headers hdr, inout metadata meta, inout standard_metadat
                 );
 
             // Read blacklist at indexs generated
-            whitelist_register.read(meta.balcklistIP1, (bit<32>)meta.srcIpHash1);
-            whitelist_register.read(meta.balcklistIP2, (bit<32>)meta.srcIpHash2);
+            // whitelist_register.read(meta.balcklistIP1, (bit<32>)meta.srcIpHash1);
+            // whitelist_register.read(meta.balcklistIP2, (bit<32>)meta.srcIpHash2);
 
             // If ip in blacklist then drop
-            if (meta.balcklistIP1 == 1 && meta.balcklistIP2 == 1) {
+            // if (meta.balcklistIP1 == 1 && meta.balcklistIP2 == 1) {
                 //drop();
-            } else {
+            // } else {
                 ipv4_lpm.apply();
 
 
@@ -590,7 +590,7 @@ control MyIngress(inout headers hdr, inout metadata meta, inout standard_metadat
                         // SYN_count_table.apply();
                     }
                 }
-            }
+            // }
          }
     }
 
