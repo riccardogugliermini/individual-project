@@ -733,8 +733,8 @@ control MyEgress(inout headers hdr,
                         log_msg("The attacker is: {}", {hdr.ipv4.srcAddr});
                         log_msg("The targeted DoS IP: {}", {hdr.ipv4.dstAddr});
                         log_msg("The targeted DoS UDP: {}", {hdr.tcp.dstPort});
-                        egress_victimIp_register.write((bit<32>)meta.synhashindex1, hdr.ipv4.dstAddr);
-                        egress_victimPort_register.write((bit<32>)meta.synhashindex1, (bit<32>)hdr.tcp.dstPort);
+                        // egress_victimIp_register.write((bit<32>)meta.synhashindex1, hdr.ipv4.dstAddr);
+                        // egress_victimPort_register.write((bit<32>)meta.synhashindex1, (bit<32>)hdr.tcp.dstPort);
                         drop();
                     }
 
