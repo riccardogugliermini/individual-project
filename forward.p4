@@ -84,6 +84,17 @@ control MyIngress(inout headers hdr, inout metadata meta, inout standard_metadat
         hdr.ipv4.ttl = hdr.ipv4.ttl - 1;
     }
 
+    table ipv4_lpm {
+        key = {
+            hdr.ipv4.dstAddr: lpm;
+        }
+        actions = {
+            ipv4_forward;
+            NoAction;
+        }
+        size = 1024;
+        default_action = ipv4_forward();
+    }
 
     apply {
         meta.portLimit = 3;
@@ -113,11 +124,10 @@ control MyEgress(inout headers hdr,
         }
         actions = {
             egress_ipv4_forward;
-            drop;
             NoAction;
         }
         size = 1024;
-        default_action = drop();
+        default_action = egress_ipv4_forward();
     }
 
 
