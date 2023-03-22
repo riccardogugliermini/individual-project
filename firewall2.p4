@@ -113,7 +113,7 @@ register <bit<1>>(1024) whitelist_register;
 
 
 // SYN Flood Ingress Bloom Filter - Open Connections Counter
-register <bit<32>>(1024) ingress_syn_register;
+register <bit<32>>(16384) ingress_syn_register;
 // SYN Flood Ingress Bloom Filter - Dropped Packets Counter
 register <bit<32>>(1024) ingress_dropped_register;
 
@@ -524,16 +524,16 @@ control MyIngress(inout headers hdr, inout metadata meta, inout standard_metadat
                     // Generate meta.synhashindex1 for SYN bloom filter index
                     hash(  meta.synhashindex1,
                             HashAlgorithm.crc32,
-                            10w0,
+                            14w0,
                             {hdr.ipv4.srcAddr},
-                            10w1023
+                            14w16383
                     );
                     // Generate meta.synhashindex2 for SYN bloom filter index
                     hash(  meta.synhashindex2,
                             HashAlgorithm.crc16,
-                            10w0,
+                            14w0,
                             {hdr.ipv4.srcAddr},
-                            10w1023
+                            14w16383
                     );
 
                     // ACK
@@ -562,7 +562,7 @@ control MyIngress(inout headers hdr, inout metadata meta, inout standard_metadat
                         SYN_count_table.apply();
                         if (meta.syncounter1 == 1 || meta.syncounter2 == 1) {
                             drop();
-                        } else if (meta.syncounter1 > 5 || meta.syncounter2 > 5) {
+                        } else if (meta.syncounter1 > 10 || meta.syncounter2 > 10) {
                             drop();
                         }
                     
@@ -683,7 +683,7 @@ control MyEgress(inout headers hdr,
     }
 
 
-     apply {
+     apply {/*
         meta.portLimit = 3;
 
          if (hdr.ipv4.isValid()) {
@@ -744,7 +744,7 @@ control MyEgress(inout headers hdr,
                 }
             }
         }
-    }
+    */}
 }
 
 control MyComputeChecksum(inout headers  hdr, inout metadata meta) {
