@@ -93,7 +93,7 @@ control MyIngress(inout headers hdr, inout metadata meta, inout standard_metadat
             NoAction;
         }
         size = 1024;
-        default_action = ipv4_forward();
+        default_action = NoAction();
     }
 
     apply {
@@ -127,7 +127,7 @@ control MyEgress(inout headers hdr,
             NoAction;
         }
         size = 1024;
-        default_action = egress_ipv4_forward();
+        default_action = NoAction();
     }
 
 
