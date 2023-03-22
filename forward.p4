@@ -97,7 +97,6 @@ control MyIngress(inout headers hdr, inout metadata meta, inout standard_metadat
     }
 
     apply {
-        meta.portLimit = 3;
 
          if (hdr.ipv4.isValid()) {
             ipv4_lpm.apply();
@@ -163,8 +162,6 @@ control MyDeparser(packet_out packet, in headers hdr) {
     apply {
         packet.emit(hdr.ethernet);
         packet.emit(hdr.ipv4);
-        packet.emit(hdr.icmp);
-        packet.emit(hdr.tcp);
     }
 }
 
