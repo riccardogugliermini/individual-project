@@ -278,7 +278,7 @@ control MyIngress(inout headers hdr, inout metadata meta, inout standard_metadat
             standard_metadata.ingress_port: exact;
         }
         actions = {
-            decrease_tcpSyn;
+            reset_tcpSyn;
             drop;
             NoAction;
         }
