@@ -42,6 +42,8 @@ struct headers {
     ipv4_t       ipv4;
 }
 
+struct metadata {}
+
 
 // ---- PARSER ----
 parser MyParser(packet_in packet, out headers hdr, inout metadata meta, inout standard_metadata_t standard_metadata) {
