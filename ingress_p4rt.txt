@@ -1,0 +1,372 @@
+pkg_info {
+  arch: "v1model"
+}
+tables {
+  preamble {
+    id: 37375156
+    name: "MyIngress.ipv4_lpm"
+    alias: "ipv4_lpm"
+  }
+  match_fields {
+    id: 1
+    name: "hdr.ipv4.dstAddr"
+    bitwidth: 32
+    match_type: LPM
+  }
+  action_refs {
+    id: 28792405
+  }
+  action_refs {
+    id: 25652968
+  }
+  action_refs {
+    id: 21257015
+  }
+  size: 1024
+}
+tables {
+  preamble {
+    id: 47291279
+    name: "MyIngress.SYN_count_table"
+    alias: "SYN_count_table"
+  }
+  match_fields {
+    id: 1
+    name: "standard_metadata.ingress_port"
+    bitwidth: 9
+    match_type: EXACT
+  }
+  action_refs {
+    id: 22909842
+  }
+  action_refs {
+    id: 25652968
+  }
+  action_refs {
+    id: 21257015
+  }
+  const_default_action_id: 22909842
+  size: 1024
+}
+tables {
+  preamble {
+    id: 37079043
+    name: "MyIngress.SYN_reset_table"
+    alias: "SYN_reset_table"
+  }
+  match_fields {
+    id: 1
+    name: "standard_metadata.ingress_port"
+    bitwidth: 9
+    match_type: EXACT
+  }
+  action_refs {
+    id: 20590033
+  }
+  action_refs {
+    id: 25652968
+  }
+  action_refs {
+    id: 21257015
+  }
+  const_default_action_id: 20590033
+  size: 1024
+}
+tables {
+  preamble {
+    id: 42025399
+    name: "MyIngress.ICMP_count_table"
+    alias: "ICMP_count_table"
+  }
+  match_fields {
+    id: 1
+    name: "standard_metadata.ingress_port"
+    bitwidth: 9
+    match_type: EXACT
+  }
+  action_refs {
+    id: 20760624
+  }
+  action_refs {
+    id: 25652968
+  }
+  action_refs {
+    id: 21257015
+  }
+  const_default_action_id: 20760624
+  size: 1024
+}
+tables {
+  preamble {
+    id: 48276356
+    name: "MyIngress.ICMP_reset_table"
+    alias: "ICMP_reset_table"
+  }
+  match_fields {
+    id: 1
+    name: "standard_metadata.ingress_port"
+    bitwidth: 9
+    match_type: EXACT
+  }
+  action_refs {
+    id: 22889091
+  }
+  action_refs {
+    id: 25652968
+  }
+  action_refs {
+    id: 21257015
+  }
+  const_default_action_id: 22889091
+  size: 1024
+}
+tables {
+  preamble {
+    id: 50295110
+    name: "MyIngress.ICMP_timestamp_update_table"
+    alias: "ICMP_timestamp_update_table"
+  }
+  match_fields {
+    id: 1
+    name: "standard_metadata.ingress_port"
+    bitwidth: 9
+    match_type: EXACT
+  }
+  action_refs {
+    id: 30148767
+  }
+  action_refs {
+    id: 25652968
+  }
+  action_refs {
+    id: 21257015
+  }
+  const_default_action_id: 30148767
+  size: 1024
+}
+tables {
+  preamble {
+    id: 43870133
+    name: "MyEgress.egress_ipv4_lpm"
+    alias: "egress_ipv4_lpm"
+  }
+  match_fields {
+    id: 1
+    name: "hdr.ipv4.dstAddr"
+    bitwidth: 32
+    match_type: LPM
+  }
+  action_refs {
+    id: 21524913
+  }
+  action_refs {
+    id: 21257015
+  }
+  size: 1024
+}
+actions {
+  preamble {
+    id: 21257015
+    name: "NoAction"
+    alias: "NoAction"
+    annotations: "@noWarn(\"unused\")"
+  }
+}
+actions {
+  preamble {
+    id: 25652968
+    name: "MyIngress.drop"
+    alias: "drop"
+  }
+}
+actions {
+  preamble {
+    id: 28792405
+    name: "MyIngress.ipv4_forward"
+    alias: "ipv4_forward"
+  }
+  params {
+    id: 1
+    name: "dstAddr"
+    bitwidth: 48
+  }
+  params {
+    id: 2
+    name: "port"
+    bitwidth: 9
+  }
+}
+actions {
+  preamble {
+    id: 22909842
+    name: "MyIngress.count_tcpSyn"
+    alias: "count_tcpSyn"
+  }
+}
+actions {
+  preamble {
+    id: 20590033
+    name: "MyIngress.reset_tcpSyn"
+    alias: "reset_tcpSyn"
+  }
+}
+actions {
+  preamble {
+    id: 20760624
+    name: "MyIngress.count_icmp"
+    alias: "count_icmp"
+  }
+}
+actions {
+  preamble {
+    id: 22889091
+    name: "MyIngress.reset_icmp"
+    alias: "reset_icmp"
+  }
+}
+actions {
+  preamble {
+    id: 30148767
+    name: "MyIngress.update_timestamp"
+    alias: "update_timestamp"
+  }
+}
+actions {
+  preamble {
+    id: 21524913
+    name: "MyEgress.egress_ipv4_forward"
+    alias: "egress_ipv4_forward"
+  }
+  params {
+    id: 1
+    name: "dstAddr"
+    bitwidth: 48
+  }
+  params {
+    id: 2
+    name: "port"
+    bitwidth: 9
+  }
+}
+registers {
+  preamble {
+    id: 370449830
+    name: "whitelist_register"
+    alias: "whitelist_register"
+  }
+  type_spec {
+    bitstring {
+      bit {
+        bitwidth: 1
+      }
+    }
+  }
+  size: 1024
+}
+registers {
+  preamble {
+    id: 370478766
+    name: "ingress_syn_register1"
+    alias: "ingress_syn_register1"
+  }
+  type_spec {
+    bitstring {
+      bit {
+        bitwidth: 32
+      }
+    }
+  }
+  size: 65536
+}
+registers {
+  preamble {
+    id: 382642721
+    name: "ingress_syn_register2"
+    alias: "ingress_syn_register2"
+  }
+  type_spec {
+    bitstring {
+      bit {
+        bitwidth: 32
+      }
+    }
+  }
+  size: 65536
+}
+registers {
+  preamble {
+    id: 378327511
+    name: "ingress_syn_register3"
+    alias: "ingress_syn_register3"
+  }
+  type_spec {
+    bitstring {
+      bit {
+        bitwidth: 32
+      }
+    }
+  }
+  size: 65536
+}
+registers {
+  preamble {
+    id: 382431828
+    name: "ingress_syn_register4"
+    alias: "ingress_syn_register4"
+  }
+  type_spec {
+    bitstring {
+      bit {
+        bitwidth: 32
+      }
+    }
+  }
+  size: 65536
+}
+registers {
+  preamble {
+    id: 378395367
+    name: "ingress_dropped_register"
+    alias: "ingress_dropped_register"
+  }
+  type_spec {
+    bitstring {
+      bit {
+        bitwidth: 32
+      }
+    }
+  }
+  size: 1024
+}
+registers {
+  preamble {
+    id: 379070254
+    name: "ingress_icmp_register"
+    alias: "ingress_icmp_register"
+  }
+  type_spec {
+    bitstring {
+      bit {
+        bitwidth: 32
+      }
+    }
+  }
+  size: 1024
+}
+registers {
+  preamble {
+    id: 375110418
+    name: "ingress_timestamp_register"
+    alias: "ingress_timestamp_register"
+  }
+  type_spec {
+    bitstring {
+      bit {
+        bitwidth: 48
+      }
+    }
+  }
+  size: 1024
+}
+type_info {
+}

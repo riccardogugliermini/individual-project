@@ -3,20 +3,28 @@ from p4utils.utils.sswitch_p4runtime_API import SimpleSwitchP4RuntimeAPI
 
 topo = load_topo('topology.json')
 
-print(topo.get_p4switches()['s1'])
+print(topo.get_p4rtswitches()['s1'])
 
-controller1 = SimpleSwitchP4RuntimeAPI(topo.get_p4switch_id('s1'),
-                                       topo.get_p4switches()['s1']['grpc_port'],
-                                       p4rt_path=topo.get_p4switches()['s1']['p4rt_path'],
+#controller1 = SimpleSwitchP4RuntimeAPI(#topo.get_p4rtswitch_id('s1'),
+                                       #topo.get_p4switches()['s1']['grpc_port'],
+controller1 = SimpleSwitchP4RuntimeAPI(topo.get_p4rtswitches()['s1']['device_id'],
+                                       topo.get_grpc_port('s1'),
+                                       p4rt_path=topo.get_p4rtswitches()['s1']['p4rt_path'],
                                        json_path=topo.get_p4switches()['s1']['json_path'])
-controller2 = SimpleSwitchP4RuntimeAPI(topo.get_p4switch_id('s2'),
-                                       topo.get_p4switches()['s2']['grpc_port'],
-                                       p4rt_path=topo.get_p4switches()['s2']['p4rt_path'],
+#controller2 = SimpleSwitchP4RuntimeAPI(#topo.get_p4rtswitch_id('s2'),
+                                       # topo.get_p4switches()['s2']['grpc_port'],
+controller2 = SimpleSwitchP4RuntimeAPI(topo.get_p4rtswitches()['s2']['device_id'],
+                                       topo.get_grpc_port('s2'),
+                                       p4rt_path=topo.get_p4rtswitches()['s2']['p4rt_path'],
                                        json_path=topo.get_p4switches()['s2']['json_path'])
-controller3 = SimpleSwitchP4RuntimeAPI(topo.get_p4switch_id('s3'),
-                                       topo.get_p4switches()['s3']['grpc_port'],
-                                       p4rt_path=topo.get_p4switches()['s3']['p4rt_path'],
+#controller3 = SimpleSwitchP4RuntimeAPI(#topo.get_p4rtswitch_id('s3'),
+                                       #topo.get_p4switches()['s3']['grpc_port'],
+controller3 = SimpleSwitchP4RuntimeAPI( topo.get_p4rtswitches()['s3']['device_id'],
+                                       topo.get_grpc_port('s3'),
+                                       p4rt_path=topo.get_p4rtswitches()['s3']['p4rt_path'],
                                        json_path=topo.get_p4switches()['s3']['json_path'])
+
+
 for neigh in topo.get_neighbors('s1'):
     if topo.isHost(neigh):
         controller1.table_add('ipv4_lpm',
@@ -30,19 +38,19 @@ for neigh in topo.get_neighbors('s1'):
         controller2.table_add('ipv4_lpm',
                              'ipv4_forward',
                              [topo.get_host_ip(neigh)],
-                             [str(topo.get_host_mac(neigh)), str(topo.node_to_node_port_num('s1', 's2'))])
+                             [str(topo.get_host_mac(neigh)), str(topo.node_to_node_port_num('s2', 's1'))])
         controller2.table_add('egress_ipv4_lpm',
                              'egress_ipv4_forward',
                              [topo.get_host_ip(neigh)],
-                             [str(topo.get_host_mac(neigh)), str(topo.node_to_node_port_num('s1', 's2'))])
+                             [str(topo.get_host_mac(neigh)), str(topo.node_to_node_port_num('s2', 's1'))])
         controller3.table_add('ipv4_lpm',
                              'ipv4_forward',
                              [topo.get_host_ip(neigh)],
-                             [str(topo.get_host_mac(neigh)), str(topo.node_to_node_port_num('s1', 's3'))])
+                             [str(topo.get_host_mac(neigh)), str(topo.node_to_node_port_num('s3', 's1'))])
         controller3.table_add('egress_ipv4_lpm',
                              'egress_ipv4_forward',
                              [topo.get_host_ip(neigh)],
-                             [str(topo.get_host_mac(neigh)), str(topo.node_to_node_port_num('s1', 's3'))])
+                             [str(topo.get_host_mac(neigh)), str(topo.node_to_node_port_num('s3', 's1'))])
 
 for neigh in topo.get_neighbors('s2'):
     if topo.isHost(neigh):
@@ -57,19 +65,19 @@ for neigh in topo.get_neighbors('s2'):
         controller1.table_add('ipv4_lpm',
                              'ipv4_forward',
                              [topo.get_host_ip(neigh)],
-                             [str(topo.get_host_mac(neigh)), str(topo.node_to_node_port_num('s2', 's1'))])
+                             [str(topo.get_host_mac(neigh)), str(topo.node_to_node_port_num('s1', 's2'))])
         controller1.table_add('egress_ipv4_lpm',
                              'egress_ipv4_forward',
                              [topo.get_host_ip(neigh)],
-                             [str(topo.get_host_mac(neigh)), str(topo.node_to_node_port_num('s2', 's1'))])
-        controller3.table_add('ipv4_lpm',
-                             'ipv4_forward',
-                             [topo.get_host_ip(neigh)],
-                             [str(topo.get_host_mac(neigh)), str(topo.node_to_node_port_num('s2', 's3'))])
-        controller3.table_add('egress_ipv4_lpm',
-                             'egress_ipv4_forward',
-                             [topo.get_host_ip(neigh)],
-                             [str(topo.get_host_mac(neigh)), str(topo.node_to_node_port_num('s2', 's3'))])
+                             [str(topo.get_host_mac(neigh)), str(topo.node_to_node_port_num('s1', 's2'))])
+        # controller3.table_add('ipv4_lpm',
+        #                      'ipv4_forward',
+        #                      [topo.get_host_ip(neigh)],
+        #                      [str(topo.get_host_mac(neigh)), str(topo.node_to_node_port_num('s2', 's3'))])
+        # controller3.table_add('egress_ipv4_lpm',
+        #                      'egress_ipv4_forward',
+        #                      [topo.get_host_ip(neigh)],
+        #                      [str(topo.get_host_mac(neigh)), str(topo.node_to_node_port_num('s2', 's3'))])
 
 for neigh in topo.get_neighbors('s3'):
     if topo.isHost(neigh):
@@ -84,16 +92,16 @@ for neigh in topo.get_neighbors('s3'):
         controller1.table_add('ipv4_lpm',
                              'ipv4_forward',
                              [topo.get_host_ip(neigh)],
-                             [str(topo.get_host_mac(neigh)), str(topo.node_to_node_port_num('s3', 's1'))])
+                             [str(topo.get_host_mac(neigh)), str(topo.node_to_node_port_num('s1', 's3'))])
         controller1.table_add('egress_ipv4_lpm',
                              'egress_ipv4_forward',
                              [topo.get_host_ip(neigh)],
-                             [str(topo.get_host_mac(neigh)), str(topo.node_to_node_port_num('s3', 's1'))])
-        controller2.table_add('ipv4_lpm',
-                             'ipv4_forward',
-                             [topo.get_host_ip(neigh)],
-                             [str(topo.get_host_mac(neigh)), str(topo.node_to_node_port_num('s3', 's2'))])
-        controller2.table_add('egress_ipv4_lpm',
-                             'egress_ipv4_forward',
-                             [topo.get_host_ip(neigh)],
-                             [str(topo.get_host_mac(neigh)), str(topo.node_to_node_port_num('s3', 's2'))])
+                             [str(topo.get_host_mac(neigh)), str(topo.node_to_node_port_num('s1', 's3'))])
+        # controller2.table_add('ipv4_lpm',
+        #                      'ipv4_forward',
+        #                      [topo.get_host_ip(neigh)],
+        #                      [str(topo.get_host_mac(neigh)), str(topo.node_to_node_port_num('s3', 's2'))])
+        # controller2.table_add('egress_ipv4_lpm',
+        #                      'egress_ipv4_forward',
+        #                      [topo.get_host_ip(neigh)],
+        #                      [str(topo.get_host_mac(neigh)), str(topo.node_to_node_port_num('s3', 's2'))])

@@ -1,0 +1,39 @@
+{
+  "cli": true,
+  "pcap_dump": true,
+  "enable_log": true,
+  "compiler_module":
+  {
+    "options":
+    {
+      "p4rt": true
+    }
+  },
+  "switch_node":
+  {
+    "module_name": "p4utils.mininetlib.node",
+    "object_name": "P4RuntimeSwitch"
+  },
+  "topology": {
+    "assignment_strategy": "l2",
+    "auto_arp_tables": false,
+    "auto_gw_arp": false,
+    "default": {
+      "bw": 1000
+    },
+    "links": [["h1", "s1"], ["h2", "s2"], ["h3", "s3"], ["s3", "s1"], ["s1", "s2"]],
+    "hosts": {
+      "h1": {
+      },
+      "h2": {
+      },
+      "h3": {
+      }
+    },
+    "switches": {
+      "s1": {"p4_src": "/home/user/individual-project/ingress.p4"},
+      "s2": {"p4_src": "/home/user/individual-project/forward.p4"},
+      "s3": {"p4_src": "/home/user/individual-project/forward.p4"}
+    }
+  }
+}
