@@ -72,28 +72,35 @@ header icmp_t {
 }
 
 struct metadata {
+    // Syn counter - Open Connections
     bit<32>    syncounter1;
     bit<32>    syncounter2;
     bit<32>    syncounter3;
     bit<32>    syncounter4;
-    bit<32>    droppedcounter1;
-    bit<32>    droppedcounter2;
+
+    // ICMP Counters
     bit<32>    icmpcounter1;
     bit<32>    icmpcounter2;
+    bit<32>    icmpcounter3;
+    bit<32>    icmpcounter4;
 
-    bit<1>     balcklistIP1;
-    bit<1>     balcklistIP2;
+    // ICMP Update Timestamps
     bit<48>    icmptimestamp1;
     bit<48>    icmptimestamp2;
+    bit<48>    icmptimestamp3;
+    bit<48>    icmptimestamp4;
 
+    // SYN Bloom Filters Indexes
     bit<16>    synhashindex1;
     bit<16>    synhashindex2;
     bit<16>    synhashindex3;
     bit<16>    synhashindex4;
+    
+    // ICMP Bloom Filters Indexes
     bit<10>    icmphashindex1;
     bit<10>    icmphashindex2;
-    bit<10>    srcIpHash1;
-    bit<10>    srcIpHash2;
+    bit<10>    icmphashindex3;
+    bit<10>    icmphashindex4;
 
     bit<32>    portNumber;
     bit<32>    routerPort;
@@ -113,28 +120,30 @@ struct headers {
     icmp_t       icmp;
 }
 
-register <bit<1>>(1024) whitelist_register;
-
 
 // SYN Flood Ingress Bloom Filter - Open Connections Counter
 register <bit<32>>(65536) ingress_syn_register1;
 register <bit<32>>(65536) ingress_syn_register2;
 register <bit<32>>(65536) ingress_syn_register3;
 register <bit<32>>(65536) ingress_syn_register4;
-// SYN Flood Ingress Bloom Filter - Dropped Packets Counter
-register <bit<32>>(1024) ingress_dropped_register;
 
 // ICMP Flood Ingress Bloom Filter - ICMP Packets Counter
-register <bit<32>>(1024) ingress_icmp_register;
+register <bit<32>>(65536) ingress_icmp_register1;
+register <bit<32>>(65536) ingress_icmp_register2;
+register <bit<32>>(65536) ingress_icmp_register2;
+register <bit<32>>(65536) ingress_icmp_register3;
+
 // ICMP Flood Timestamp Register
-register <bit<48>>(1024) ingress_timestamp_register;
+register <bit<48>>(65536) ingress_timestamp_register1;
+register <bit<48>>(65536) ingress_timestamp_register2;
+register <bit<48>>(65536) ingress_timestamp_register3;
+register <bit<48>>(65536) ingress_timestamp_register4;
 
 // THRESHOLDS
-const bit<32> DROPPED_PACKETS_TRESHOLD = 10;
-const bit<32> OPEN_CONNECTIONS_TRESHOLD = 5;
+const bit<32> TCP_SYN_DROP_TRESHOLD = 4;
+const bit<32> TCP_SYN_RESET_TRESHOLD = 14;
 const bit<48> ICMP_TIMESTAMP_TRESHOLD = 5000000;
 const bit<32> ICMP_PACKETS_THRESHOLD = 20;
-const bit<32> EGRESS_SYN_TRESHOLD = 10;
 
 // ---- PARSER ----
 parser MyParser(packet_in packet, out headers hdr, inout metadata meta, inout standard_metadata_t standard_metadata) {
@@ -231,32 +240,45 @@ control MyIngress(inout headers hdr, inout metadata meta, inout standard_metadat
     action count_icmp() {
         meta.icmpcounter1 = meta.icmpcounter1 + 1;
         meta.icmpcounter2 = meta.icmpcounter2 + 1;
+        meta.icmpcounter1 = meta.icmpcounter3 + 1;
+        meta.icmpcounter2 = meta.icmpcounter4 + 1;
 
-        ingress_icmp_register.write((bit<32>)meta.icmphashindex1, meta.icmpcounter1);
-        ingress_icmp_register.write((bit<32>)meta.icmphashindex2, meta.icmpcounter2);
+        ingress_icmp_register1.write((bit<32>)meta.icmphashindex1, meta.icmpcounter1);
+        ingress_icmp_register2.write((bit<32>)meta.icmphashindex2, meta.icmpcounter2);
+        ingress_icmp_register3.write((bit<32>)meta.icmphashindex3, meta.icmpcounter1);
+        ingress_icmp_register4.write((bit<32>)meta.icmphashindex4, meta.icmpcounter2);
 
         log_msg("count_icmp: meta.icmpcounter1 = {}", {meta.icmpcounter1});
         log_msg("count_icmp: meta.icmpcounter2 = {}", {meta.icmpcounter2});
+        log_msg("count_icmp: meta.icmpcounter3 = {}", {meta.icmpcounter3});
+        log_msg("count_icmp: meta.icmpcounter4 = {}", {meta.icmpcounter4});
     }
 
     action reset_icmp() {
-        if (meta.icmpcounter1 > 0 && meta.icmpcounter2 > 0) {
-            meta.icmpcounter1 = 0;
-            meta.icmpcounter2 = 0;
-        }
+        meta.icmpcounter1 = 0;
+        meta.icmpcounter2 = 0;
+        meta.icmpcounter3 = 0;
+        meta.icmpcounter4 = 0;
+    
 
-        ingress_icmp_register.write((bit<32>)meta.icmphashindex1, 0);
-        ingress_icmp_register.write((bit<32>)meta.icmphashindex2, 0);
+        ingress_icmp_register1.write((bit<32>)meta.icmphashindex1, 0);
+        ingress_icmp_register2.write((bit<32>)meta.icmphashindex2, 0);
+        ingress_icmp_register3.write((bit<32>)meta.icmphashindex3, 0);
+        ingress_icmp_register4.write((bit<32>)meta.icmphashindex4, 0);
 
         log_msg("reset_icmp: meta.icmpcounter1 = {}", {meta.icmpcounter1});
         log_msg("reset_icmp: meta.icmpcounter2 = {}", {meta.icmpcounter2});
+        log_msg("reset_icmp: meta.icmpcounter3 = {}", {meta.icmpcounter3});
+        log_msg("reset_icmp: meta.icmpcounter4 = {}", {meta.icmpcounter4});
     }
 
 
     /* ---- MANAGE ICMP TIMESTAMP ---- */
     action update_timestamp() {
-        ingress_timestamp_register.write((bit<32>)meta.icmphashindex1, standard_metadata.ingress_global_timestamp);
-        ingress_timestamp_register.write((bit<32>)meta.icmphashindex2, standard_metadata.ingress_global_timestamp);
+        ingress_timestamp_register1.write((bit<32>)meta.icmphashindex1, standard_metadata.ingress_global_timestamp);
+        ingress_timestamp_register2.write((bit<32>)meta.icmphashindex2, standard_metadata.ingress_global_timestamp);
+        ingress_timestamp_register3.write((bit<32>)meta.icmphashindex3, standard_metadata.ingress_global_timestamp);
+        ingress_timestamp_register4.write((bit<32>)meta.icmphashindex4, standard_metadata.ingress_global_timestamp);
 
         log_msg("update_timestamp : {}", {standard_metadata.ingress_global_timestamp});
     }
@@ -344,8 +366,6 @@ control MyIngress(inout headers hdr, inout metadata meta, inout standard_metadat
     }
 
     apply {
-        meta.portLimit = 3;
-
         if (hdr.ipv4.isValid()) {
             log_msg("INGRESS.hdr.ipv4.srcAddr{}", {hdr.ipv4.srcAddr});
             log_msg("INGRESS.hdr.ipv4.dstAddr = {}", {hdr.ipv4.dstAddr});
@@ -361,34 +381,56 @@ control MyIngress(inout headers hdr, inout metadata meta, inout standard_metadat
                 // Generate meta.icmphashindex1 for ICMP bloom filter index
                 hash(  meta.icmphashindex1,
                         HashAlgorithm.crc32,
-                        10w0,
+                        16w0,
                         {hdr.ipv4.srcAddr, hdr.ipv4.dstAddr},
-                        10w1023
+                        16w65535
                 );
 
                 // Generate meta.icmphashindex2 for ICMP bloom filter index
                 hash(  meta.icmphashindex2,
                         HashAlgorithm.crc16,
-                        10w0,
+                        16w0,
                         {hdr.ipv4.srcAddr, hdr.ipv4.dstAddr},
-                        10w1023
+                        16w65535
+                );
+
+                // Generate meta.icmphashindex3 for ICMP bloom filter index
+                hash(  meta.icmphashindex3,
+                        HashAlgorithm.crc32,
+                        16w0,
+                        {hdr.ipv4.srcAddr, hdr.ipv4.dstAddr},
+                        16w65535
+                );
+
+                // Generate meta.icmphashindex4 for ICMP bloom filter index
+                hash(  meta.icmphashindex4,
+                        HashAlgorithm.crc16,
+                        16w0,
+                        {hdr.ipv4.srcAddr, hdr.ipv4.dstAddr},
+                        16w65535
                 );
 
                 // Read current counters
-                ingress_icmp_register.read(meta.icmpcounter1, (bit<32>)meta.icmphashindex1);
-                ingress_icmp_register.read(meta.icmpcounter2, (bit<32>)meta.icmphashindex2);
-                log_msg("INGRESS.Apply meta.icmpcounter1 = {}", {meta.icmpcounter1});
-                log_msg("INGRESS.Apply meta.icmpcounter2 = {}", {meta.icmpcounter2});
-
+                ingress_icmp_register1.read(meta.icmpcounter1, (bit<32>)meta.icmphashindex1);
+                ingress_icmp_register2.read(meta.icmpcounter2, (bit<32>)meta.icmphashindex2);
+                ingress_icmp_register3.read(meta.icmpcounter3, (bit<32>)meta.icmphashindex3);
+                ingress_icmp_register4.read(meta.icmpcounter4, (bit<32>)meta.icmphashindex4);
+                
                 // Read current timestamps
-                ingress_timestamp_register.read(meta.icmptimestamp1, (bit<32>)meta.icmphashindex1);
-                ingress_timestamp_register.read(meta.icmptimestamp2, (bit<32>)meta.icmphashindex2);
+                ingress_timestamp_register1.read(meta.icmptimestamp1, (bit<32>)meta.icmphashindex1);
+                ingress_timestamp_register2.read(meta.icmptimestamp2, (bit<32>)meta.icmphashindex2);
+                ingress_timestamp_register3.read(meta.icmptimestamp3, (bit<32>)meta.icmphashindex3);
+                ingress_timestamp_register4.read(meta.icmptimestamp4, (bit<32>)meta.icmphashindex4);
 
                 // ICMP Count
                 ICMP_count_table.apply();
 
                 // Check if timestamp exceeds time threshold
-                if (standard_metadata.ingress_global_timestamp > (meta.icmptimestamp1 + ICMP_TIMESTAMP_TRESHOLD) &&  standard_metadata.ingress_global_timestamp > ( meta.icmptimestamp2 + ICMP_TIMESTAMP_TRESHOLD)) {
+                if (standard_metadata.ingress_global_timestamp > (meta.icmptimestamp1 + ICMP_TIMESTAMP_TRESHOLD) ||  
+                    standard_metadata.ingress_global_timestamp > (meta.icmptimestamp2 + ICMP_TIMESTAMP_TRESHOLD) ||
+                    standard_metadata.ingress_global_timestamp > (meta.icmptimestamp3 + ICMP_TIMESTAMP_TRESHOLD) ||  
+                    standard_metadata.ingress_global_timestamp > (meta.icmptimestamp4 + ICMP_TIMESTAMP_TRESHOLD)
+                    ) {
                     // Reset ICMP counters
                     ICMP_reset_table.apply();
                 }
@@ -397,11 +439,16 @@ control MyIngress(inout headers hdr, inout metadata meta, inout standard_metadat
                 ICMP_timestamp_update_table.apply();
 
                 // Check if ICMP counters exceeds time threshold
-                if ((meta.icmpcounter1 == 1 || meta.icmpcounter2 == 1) || (meta.icmpcounter1 > ICMP_PACKETS_THRESHOLD && meta.icmpcounter2 > ICMP_PACKETS_THRESHOLD)) {
+                if ((meta.icmpcounter1 == 1 || meta.icmpcounter2 == 1 || meta.icmpcounter3 == 1 || meta.icmpcounter4 == 1) || 
+                    (meta.icmpcounter1 > ICMP_PACKETS_THRESHOLD && 
+                    meta.icmpcounter2 > ICMP_PACKETS_THRESHOLD &&
+                    meta.icmpcounter3 > ICMP_PACKETS_THRESHOLD && 
+                    meta.icmpcounter4 > ICMP_PACKETS_THRESHOLD)) {
                     // Drop packet
                     drop();
                 }
             }
+
 
             if (hdr.tcp.isValid()) {
                 log_msg("INGRESS.hdr.tcp.dstPort = {}", {hdr.tcp.dstPort});
@@ -420,14 +467,14 @@ control MyIngress(inout headers hdr, inout metadata meta, inout standard_metadat
                         {hdr.ipv4.srcAddr},
                         16w65535
                 );
-                // Generate meta.synhashindex1 for SYN bloom filter index
+                // Generate meta.synhashindex3 for SYN bloom filter index
                 hash(  meta.synhashindex3,
                         HashAlgorithm.crc16,
                         16w0,
                         {hdr.ipv4.srcAddr},
                         16w65535
                 );
-                // Generate meta.synhashindex2 for SYN bloom filter index
+                // Generate meta.synhashindex4 for SYN bloom filter index
                 hash(  meta.synhashindex4,
                         HashAlgorithm.identity,
                         16w0,
@@ -443,7 +490,13 @@ control MyIngress(inout headers hdr, inout metadata meta, inout standard_metadat
                 ingress_syn_register4.read(meta.syncounter4, (bit<32>)meta.synhashindex4);
 
                 // ACK
-                if (hdr.tcp.ack == 1 && hdr.tcp.syn == 0 || (meta.syncounter1 > 6 || meta.syncounter2 > 6 || meta.syncounter3 > 6 || meta.syncounter4 > 6))  {
+                if (hdr.tcp.ack == 1 &&
+                    hdr.tcp.syn == 0 || 
+                    (meta.syncounter1 > TCP_SYN_RESET_TRESHOLD ||
+                    meta.syncounter2 > TCP_SYN_RESET_TRESHOLD ||
+                    meta.syncounter3 > TCP_SYN_RESET_TRESHOLD ||
+                    meta.syncounter4 > TCP_SYN_RESET_TRESHOLD)
+                    )  {
                     log_msg("TCP ACK");
 
 
@@ -461,8 +514,11 @@ control MyIngress(inout headers hdr, inout metadata meta, inout standard_metadat
                     SYN_count_table.apply();
                     if (meta.syncounter1 == 1 || meta.syncounter2 == 1 || meta.syncounter3 == 1 || meta.syncounter4 == 1) {
                         drop();
-                    } else if (meta.syncounter1 > 4 || meta.syncounter2 > 4 || meta.syncounter3 > 4 || meta.syncounter4 > 4) {
-                        //SYN_reset_table.apply();
+                    } else if (meta.syncounter1 > TCP_SYN_DROP_TRESHOLD || 
+                                meta.syncounter2 > TCP_SYN_DROP_TRESHOLD || 
+                                meta.syncounter3 > TCP_SYN_DROP_TRESHOLD || 
+                                meta.syncounter4 > TCP_SYN_DROP_TRESHOLD
+                            ) {
                         drop();
                     }
                 }
