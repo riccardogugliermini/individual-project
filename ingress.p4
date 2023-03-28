@@ -422,14 +422,16 @@ control MyIngress(inout headers hdr, inout metadata meta, inout standard_metadat
                 ingress_timestamp_register3.read(meta.icmptimestamp3, (bit<32>)meta.icmphashindex3);
                 ingress_timestamp_register4.read(meta.icmptimestamp4, (bit<32>)meta.icmphashindex4);
 
-                // ICMP Count
-                ICMP_count_table.apply();
-
+                
                 // Check if timestamp exceeds time threshold
                 if (standard_metadata.ingress_global_timestamp > (meta.icmptimestamp1 + ICMP_TIMESTAMP_TRESHOLD) ||  
                     standard_metadata.ingress_global_timestamp > (meta.icmptimestamp2 + ICMP_TIMESTAMP_TRESHOLD) ||
                     standard_metadata.ingress_global_timestamp > (meta.icmptimestamp3 + ICMP_TIMESTAMP_TRESHOLD) ||  
-                    standard_metadata.ingress_global_timestamp > (meta.icmptimestamp4 + ICMP_TIMESTAMP_TRESHOLD)
+                    standard_metadata.ingress_global_timestamp > (meta.icmptimestamp4 + ICMP_TIMESTAMP_TRESHOLD) ||
+                    (meta.icmpcounter1 == 0 ||
+                     meta.icmpcounter2 == 0 || 
+                     meta.icmpcounter3 == 0 ||
+                     meta.icmpcounter4 == 0)
                     ) {
                     // Reset ICMP counters
                     ICMP_reset_table.apply();
@@ -438,8 +440,14 @@ control MyIngress(inout headers hdr, inout metadata meta, inout standard_metadat
                 // Update timestamp
                 ICMP_timestamp_update_table.apply();
 
+                // ICMP Count
+                ICMP_count_table.apply();
+
                 // Check if ICMP counters exceeds time threshold
-                if ((meta.icmpcounter1 == 1 || meta.icmpcounter2 == 1 || meta.icmpcounter3 == 1 || meta.icmpcounter4 == 1) || 
+                if ((meta.icmpcounter1 == 1 ||
+                     meta.icmpcounter2 == 1 || 
+                     meta.icmpcounter3 == 1 ||
+                     meta.icmpcounter4 == 1) || 
                     (meta.icmpcounter1 > ICMP_PACKETS_THRESHOLD && 
                     meta.icmpcounter2 > ICMP_PACKETS_THRESHOLD &&
                     meta.icmpcounter3 > ICMP_PACKETS_THRESHOLD && 
