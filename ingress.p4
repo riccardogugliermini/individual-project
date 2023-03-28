@@ -381,7 +381,7 @@ control MyIngress(inout headers hdr, inout metadata meta, inout standard_metadat
                 hash(  meta.icmphashindex1,
                         HashAlgorithm.crc32,
                         16w0,
-                        {hdr.ipv4.srcAddr, hdr.ipv4.dstAddr},
+                        {hdr.ipv4.srcAddr},
                         16w65535
                 );
 
@@ -389,7 +389,7 @@ control MyIngress(inout headers hdr, inout metadata meta, inout standard_metadat
                 hash(  meta.icmphashindex2,
                         HashAlgorithm.crc16,
                         16w0,
-                        {hdr.ipv4.srcAddr, hdr.ipv4.dstAddr},
+                        {hdr.ipv4.srcAddr},
                         16w65535
                 );
 
@@ -397,7 +397,7 @@ control MyIngress(inout headers hdr, inout metadata meta, inout standard_metadat
                 hash(  meta.icmphashindex3,
                         HashAlgorithm.xor16,
                         16w0,
-                        {hdr.ipv4.srcAddr, hdr.ipv4.dstAddr},
+                        {hdr.ipv4.srcAddr},
                         16w65535
                 );
 
@@ -405,7 +405,7 @@ control MyIngress(inout headers hdr, inout metadata meta, inout standard_metadat
                 hash(  meta.icmphashindex4,
                         HashAlgorithm.identity,
                         16w0,
-                        {hdr.ipv4.srcAddr, hdr.ipv4.dstAddr},
+                        {hdr.ipv4.srcAddr},
                         16w65535
                 );
 
@@ -434,7 +434,7 @@ control MyIngress(inout headers hdr, inout metadata meta, inout standard_metadat
                     meta.icmpcounter2 > 40 || 
                     meta.icmpcounter3 > 40 ||
                     meta.icmpcounter4 > 40
-                    ) {
+                ) {
                     // Reset ICMP counters
                     ICMP_reset_table.apply();
                 }
@@ -444,14 +444,15 @@ control MyIngress(inout headers hdr, inout metadata meta, inout standard_metadat
 
                 
                 // Check if ICMP counters exceeds time threshold
-                if ((meta.icmpcounter1 == 1 ||
-                     meta.icmpcounter2 == 1 || 
-                     meta.icmpcounter3 == 1 ||
-                     meta.icmpcounter4 == 1) || 
+                if (meta.icmpcounter1 == 1 ||
+                    meta.icmpcounter2 == 1 || 
+                    meta.icmpcounter3 == 1 ||
+                    meta.icmpcounter4 == 1 || 
                     (meta.icmpcounter1 > ICMP_PACKETS_THRESHOLD && 
                     meta.icmpcounter2 > ICMP_PACKETS_THRESHOLD &&
                     meta.icmpcounter3 > ICMP_PACKETS_THRESHOLD && 
-                    meta.icmpcounter4 > ICMP_PACKETS_THRESHOLD)) {
+                    meta.icmpcounter4 > ICMP_PACKETS_THRESHOLD)
+                ) {
                     // Drop packet
                     drop();
                 }
