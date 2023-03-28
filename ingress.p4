@@ -130,8 +130,8 @@ register <bit<32>>(65536) ingress_syn_register4;
 // ICMP Flood Ingress Bloom Filter - ICMP Packets Counter
 register <bit<32>>(65536) ingress_icmp_register1;
 register <bit<32>>(65536) ingress_icmp_register2;
-register <bit<32>>(65536) ingress_icmp_register2;
 register <bit<32>>(65536) ingress_icmp_register3;
+register <bit<32>>(65536) ingress_icmp_register4;
 
 // ICMP Flood Timestamp Register
 register <bit<48>>(65536) ingress_timestamp_register1;
