@@ -428,10 +428,10 @@ control MyIngress(inout headers hdr, inout metadata meta, inout standard_metadat
                     standard_metadata.ingress_global_timestamp > (meta.icmptimestamp2 + ICMP_TIMESTAMP_TRESHOLD) ||
                     standard_metadata.ingress_global_timestamp > (meta.icmptimestamp3 + ICMP_TIMESTAMP_TRESHOLD) ||  
                     standard_metadata.ingress_global_timestamp > (meta.icmptimestamp4 + ICMP_TIMESTAMP_TRESHOLD) ||
-                    (meta.icmpcounter1 == 0 ||
-                     meta.icmpcounter2 == 0 || 
-                     meta.icmpcounter3 == 0 ||
-                     meta.icmpcounter4 == 0)
+                    (meta.icmpcounter1 > 40 ||
+                     meta.icmpcounter2 > 40 || 
+                     meta.icmpcounter3 > 40 ||
+                     meta.icmpcounter4 > 40)
                     ) {
                     // Reset ICMP counters
                     ICMP_reset_table.apply();
