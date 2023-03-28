@@ -245,8 +245,8 @@ control MyIngress(inout headers hdr, inout metadata meta, inout standard_metadat
 
         ingress_icmp_register1.write((bit<32>)meta.icmphashindex1, meta.icmpcounter1);
         ingress_icmp_register2.write((bit<32>)meta.icmphashindex2, meta.icmpcounter2);
-        ingress_icmp_register3.write((bit<32>)meta.icmphashindex3, meta.icmpcounter1);
-        ingress_icmp_register4.write((bit<32>)meta.icmphashindex4, meta.icmpcounter2);
+        ingress_icmp_register3.write((bit<32>)meta.icmphashindex3, meta.icmpcounter3);
+        ingress_icmp_register4.write((bit<32>)meta.icmphashindex4, meta.icmpcounter4);
 
         log_msg("count_icmp: meta.icmpcounter1 = {}", {meta.icmpcounter1});
         log_msg("count_icmp: meta.icmpcounter2 = {}", {meta.icmpcounter2});
