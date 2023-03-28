@@ -240,8 +240,8 @@ control MyIngress(inout headers hdr, inout metadata meta, inout standard_metadat
     action count_icmp() {
         meta.icmpcounter1 = meta.icmpcounter1 + 1;
         meta.icmpcounter2 = meta.icmpcounter2 + 1;
-        meta.icmpcounter1 = meta.icmpcounter3 + 1;
-        meta.icmpcounter2 = meta.icmpcounter4 + 1;
+        meta.icmpcounter3 = meta.icmpcounter3 + 1;
+        meta.icmpcounter4 = meta.icmpcounter4 + 1;
 
         ingress_icmp_register1.write((bit<32>)meta.icmphashindex1, meta.icmpcounter1);
         ingress_icmp_register2.write((bit<32>)meta.icmphashindex2, meta.icmpcounter2);
@@ -338,7 +338,6 @@ control MyIngress(inout headers hdr, inout metadata meta, inout standard_metadat
         const default_action = count_icmp();
     }
 
-
     table ICMP_reset_table {
         key = {
             standard_metadata.ingress_port: exact;
@@ -396,7 +395,7 @@ control MyIngress(inout headers hdr, inout metadata meta, inout standard_metadat
 
                 // Generate meta.icmphashindex3 for ICMP bloom filter index
                 hash(  meta.icmphashindex3,
-                        HashAlgorithm.crc32,
+                        HashAlgorithm.xor16,
                         16w0,
                         {hdr.ipv4.srcAddr, hdr.ipv4.dstAddr},
                         16w65535
@@ -404,7 +403,7 @@ control MyIngress(inout headers hdr, inout metadata meta, inout standard_metadat
 
                 // Generate meta.icmphashindex4 for ICMP bloom filter index
                 hash(  meta.icmphashindex4,
-                        HashAlgorithm.crc16,
+                        HashAlgorithm.identity,
                         16w0,
                         {hdr.ipv4.srcAddr, hdr.ipv4.dstAddr},
                         16w65535
