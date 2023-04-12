@@ -9,7 +9,6 @@
 
 const bit<16> TYPE_IPV4 = 0x800;
 const bit<8>  IP_PROTOCOL_TCP = 0x6;
-const bit<8>  IP_PROTOCOL_ICMP = 0x01;
 
 
 // HEADERS
@@ -61,43 +60,14 @@ header tcp_t {
     bit<16>   urgentPtr;
 }
 
-// ICMP header
-header icmp_t {
-    bit<8> type;
-    bit<8> code;
-    bit<16> checksum;
-    bit<16> identifier;
-    bit<16> seqNo;
-    bit<32> data;
-}
 
 struct metadata {
     bit<32>    syncounter1;
     bit<32>    syncounter2;
-    bit<32>    droppedcounter1;
-    bit<32>    droppedcounter2;
-    bit<32>    icmpcounter1;
-    bit<32>    icmpcounter2;
 
-    bit<1>     balcklistIP1;
-    bit<1>     balcklistIP2;
-    bit<48>    icmptimestamp1;
-    bit<48>    icmptimestamp2;
-
-    bit<10>    synhashindex1;
-    bit<10>    synhashindex2;
     bit<10>    icmphashindex1;
     bit<10>    icmphashindex2;
-    bit<10>    srcIpHash1;
-    bit<10>    srcIpHash2;
 
-    bit<32>    portNumber;
-    bit<32>    routerPort;
-    bit<32>    portLimit;
-    bit<1>     isSYN;
-    bit<1>     isACK;
-    bit<32>    localNetwork;
-    bit<1>     localNetworkOriginated;
     bit<32>    srcAddr;
 
 }
@@ -106,19 +76,12 @@ struct headers {
     ethernet_t   ethernet;
     ipv4_t       ipv4;
     tcp_t        tcp;
-    icmp_t       icmp;
 }
-
-register <bit<1>>(1024) whitelist_register;
 
 // SYN Flood Egress Bloom Filter - Open Connections Counter
 register <bit<32>>(1024) egress_syn_register;
 
 // THRESHOLDS
-const bit<32> DROPPED_PACKETS_TRESHOLD = 10;
-const bit<32> OPEN_CONNECTIONS_TRESHOLD = 5;
-const bit<48> ICMP_TIMESTAMP_TRESHOLD = 5000000;
-const bit<32> ICMP_PACKETS_THRESHOLD = 10;
 const bit<32> EGRESS_SYN_TRESHOLD = 10;
 
 // ---- PARSER ----
@@ -138,15 +101,9 @@ parser MyParser(packet_in packet, out headers hdr, inout metadata meta, inout st
     state parse_ipv4 {
         packet.extract(hdr.ipv4);
         transition select(hdr.ipv4.protocol) {
-            IP_PROTOCOL_ICMP: parse_icmp;
             IP_PROTOCOL_TCP: parse_tcp;
             default: accept;
         }
-    }
-
-    state parse_icmp {
-        packet.extract(hdr.icmp);
-        transition accept;
     }
 
     state parse_tcp {
@@ -207,23 +164,14 @@ control MyEgress(inout headers hdr,
     }
 
     action egress_count_tcpSyn() {
-        log_msg("count_tcpSyn: standard_metadata.ingress_port = {}", {standard_metadata.ingress_port});
-        log_msg("count_tcpSyn: standard_metadata.egress_port = {}", {standard_metadata.ingress_port});
-        log_msg("count_tcpSyn: standard_metadata.egress_spec = {}", {standard_metadata.egress_spec});
-        log_msg("count_tcpSyn: meta.routerPort = {}", {meta.routerPort});
-
         meta.syncounter1 = meta.syncounter1 + 1;
         meta.syncounter2 = meta.syncounter2 + 1;
+
         egress_syn_register.write((bit<32>)meta.synhashindex1, meta.syncounter1);
         egress_syn_register.write((bit<32>)meta.synhashindex2, meta.syncounter2);
     }
 
     action egress_decrease_tcpSyn() {
-        log_msg("count_tcpSyn: standard_metadata.ingress_port = {}", {standard_metadata.ingress_port});
-        log_msg("count_tcpSyn: standard_metadata.egress_port = {}", {standard_metadata.ingress_port});
-        log_msg("count_tcpSyn: standard_metadata.egress_spec = {}", {standard_metadata.egress_spec});
-        log_msg("count_tcpSyn: meta.routerPort = {}", {meta.routerPort});
-
         if (meta.syncounter1 > 0 && meta.syncounter2 > 0) {
             meta.syncounter1 = meta.syncounter1 - 1;
             meta.syncounter2 = meta.syncounter2 - 1;
@@ -249,8 +197,6 @@ control MyEgress(inout headers hdr,
     table egress_SYN_count_table {
         key = {
             standard_metadata.ingress_port: exact;
-            //meta.portLimit: exact;
-            //hdr.tcp.flags: exact;
         }
         actions = {
             egress_count_tcpSyn;
@@ -265,8 +211,6 @@ control MyEgress(inout headers hdr,
     table egress_SYN_decrease_table {
         key = {
             standard_metadata.ingress_port: exact;
-            //meta.portLimit: exact;
-            //hdr.tcp.flags: exact;
         }
         actions = {
             egress_decrease_tcpSyn;
@@ -279,8 +223,6 @@ control MyEgress(inout headers hdr,
 
 
      apply {
-        meta.portLimit = 3;
-
         if (hdr.ipv4.isValid()) {
 
             egress_ipv4_lpm.apply();
@@ -303,33 +245,20 @@ control MyEgress(inout headers hdr,
                 );
 
                 // ACK
-                //if (((hdr.tcp.flags >> 1) & 1) != 0) {
                 if (hdr.tcp.ack == 1) {
                     egress_SYN_decrease_table.apply();
                     log_msg("TCP ACK");
                 }
 
                 //SYN request
-                //if (((hdr.tcp.flags >> 4) & 1) != 0) {
                 if (hdr.tcp.syn == 1) {
                     log_msg("TCP request = SYN");
 
 
-                    // Is this a known attacker?
                     egress_syn_register.read(meta.syncounter1, (bit<32>)meta.synhashindex1);
                     egress_syn_register.read(meta.syncounter2, (bit<32>)meta.synhashindex2);
-                    log_msg("INGRESS.hdr.ipv4.srcAddr{}", {hdr.ipv4.srcAddr});
-                    log_msg("INGRESS.hdr.ipv4.dstAddr = {}", {hdr.ipv4.dstAddr});
-                    log_msg("INGRESS.hdr.tcp.dstPort = {}", {hdr.tcp.dstPort});
-                    log_msg("INGRESS.Apply meta.syncounter1 = {}", {meta.syncounter1});
-                    log_msg("INGRESS.Apply meta.syncounter2 = {}", {meta.syncounter2});
-                    log_msg("INGRESS.Apply meta.portLimit = {}", {meta.portLimit});
+
                     if ((meta.syncounter1 > EGRESS_SYN_TRESHOLD) && (meta.syncounter2 > EGRESS_SYN_TRESHOLD)){
-                        log_msg("The attacker is: {}", {hdr.ipv4.srcAddr});
-                        log_msg("The targeted DoS IP: {}", {hdr.ipv4.dstAddr});
-                        log_msg("The targeted DoS UDP: {}", {hdr.tcp.dstPort});
-                        // egress_victimIp_register.write((bit<32>)meta.synhashindex1, hdr.ipv4.dstAddr);
-                        // egress_victimPort_register.write((bit<32>)meta.synhashindex1, (bit<32>)hdr.tcp.dstPort);
                         drop();
                     }
 
@@ -364,7 +293,6 @@ control MyDeparser(packet_out packet, in headers hdr) {
     apply {
         packet.emit(hdr.ethernet);
         packet.emit(hdr.ipv4);
-        packet.emit(hdr.icmp);
         packet.emit(hdr.tcp);
     }
 }
