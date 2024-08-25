@@ -1,77 +1,55 @@
-# Detection and Analysis of Scam Call Centers through Virtual Machines and Scambaiting Techniques
+# Analysis and Defense against IoT Botnet Attacks
 
-## Overview
+## Project Overview
 
-This project investigates the detection and analysis of scam call centers through the use of virtual machines (VMs) and scambaiting techniques. By creating a controlled environment, the project aims to understand the operational mechanisms of scam call centers and develop strategies to mitigate their impact.
+This project aims to address the growing threat of network attacks, specifically TCP SYN and ICMP flood attacks, which can overwhelm targeted systems and make them unusable. By leveraging Software-Defined Networks (SDNs) and the P4 programming language, this project develops a custom controller to manage network traffic more effectively and offer innovative methods for detecting, deferring, and mitigating these types of attacks.
 
-## Features
+## Project Structure
 
-- **Virtual Machine Setup:** Configuration of a secure VM environment for interacting with scammers.
-- **Scambaiting Techniques:** Implementation of methods to engage and study scammers.
-- **Data Collection:** Capture of network traffic, file system modifications, and screen activity during interactions.
-- **Analysis Tools:** Utilization of various tools to analyze the collected data and identify scam patterns.
+- **Project Report**: Contains the detailed analysis, background, and research conducted for this project.
+- **P4 Scripts**: The P4 code files, including the firewall and forwarding logic.
+- **Mininet Environment**: Used to simulate the network environment for testing the P4 scripts.
+- **P4-Utils**: Utility scripts to manage and deploy P4 programs within Mininet.
+- **Testing and Evaluation**: Includes the setup and results of the experiments conducted to evaluate the effectiveness of the developed solutions.
 
-## Architecture
+## Requirements
 
-### Virtual Machine
+### Software Requirements
+- **P4 Language**: A programming language for packet processing.
+- **Mininet**: A network emulator to simulate a network environment.
+- **P4-Utils**: Utilities to assist in the deployment and management of P4 programs within Mininet.
 
-The VM environment is set up using VirtualBox, providing an isolated and secure platform to interact with scammers without compromising the host system.
-
-### Data Collection
-
-- **Network Traffic:** Captured using Wireshark to monitor incoming and outgoing data packets.
-- **File System Modifications:** Tracked to identify any changes made by the scammers.
-- **Screen Activity:** Recorded to capture the actions performed by scammers during the interaction.
+### System Requirements
+- Ubuntu 20.04 or later
+- Python 3.8 or later
+- Git
+- `p4c` compiler (for compiling P4 code)
 
 ## Installation
 
-1. **Clone the Repository:**
-    ```bash
-    git clone https://github.com/riccardogugliermini/individual-project.git
-    ```
-2. **Navigate to the Project Directory:**
-    ```bash
-    cd individual-project
-    ```
-3. **Install Dependencies:**
-    Follow the setup instructions in the `InstallationInstructions.pdf` provided in the repository.
-4. **Setup Virtual Machine:**
-    - Install VirtualBox from [VirtualBox website](https://www.virtualbox.org/).
-    - Follow the VM setup instructions in the `InstallationInstructions.pdf`.
+1. **Clone the Repository**:
+   ```bash
+   git clone <repository_url>
+   cd <repository_name>
 
-## Usage
+## Running the Project
 
-1. **Start the Virtual Machine:**
-    - Launch VirtualBox and start the configured VM.
-2. **Engage Scammers:**
-    - Use the VM to interact with scammers, ensuring all activity is contained within the VM.
-3. **Data Collection:**
-    - Use Wireshark to capture network traffic.
-    - Monitor file system changes and record screen activity.
-4. **Analysis:**
-    - Use provided analysis tools to study the collected data and identify scam patterns.
+- Start Mininet:
+``` sudo mn --custom <path_to_custom_topology_script> --topo mytopo --controller remote ```
+- Compile and Run P4 Programs: Use the provided scripts in the P4-Utils directory to compile and deploy the P4 programs.
+- Testing: The testing environment is set up in Mininet, and various tools such as hping3 can be used to simulate TCP SYN and ICMP flood attacks. The results of these tests can be found in the Experiments section of the report.
+Project Results
 
-## Results
+The developed solution demonstrates a significant improvement in mitigating TCP SYN and ICMP flood attacks. Detailed results and discussions can be found in the Results & Discussion section of the project report.
 
-- **Scam Patterns:** Identified common tactics and techniques used by scammers.
-- **Mitigation Strategies:** Developed strategies to mitigate the impact of scam call centers.
+## Future Work
 
-## Contributing
+Further enhancements can include:
 
-Contributions are welcome! Please read the [contributing guidelines](CONTRIBUTING.md) for more details.
+- Extending the solution to handle more types of network attacks.
+- Optimizing the performance of the P4 programs for deployment in real-world environments.
+- Integrating with other SDN controllers for more comprehensive network management.
 
-## License
+## Author
 
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
-
-## Contact
-
-For any questions or suggestions, feel free to open an issue or contact me at [your email].
-
----
-
-
-## References
-
-- [VirtualBox](https://www.virtualbox.org/)
-- [Wireshark](https://www.wireshark.org/)
+Riccardo Gugliermini
