@@ -25,13 +25,6 @@ This project aims to address the growing threat of network attacks, specifically
 - Git
 - `p4c` compiler (for compiling P4 code)
 
-## Installation
-
-1. **Clone the Repository**:
-   ```bash
-   git clone <repository_url>
-   cd <repository_name>
-
 ## Running the Project
 
 - Start Mininet:
